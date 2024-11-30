@@ -1,0 +1,7 @@
+{
+  "identifier": "com.zettl.app",
+  "build": {
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  }
+}
