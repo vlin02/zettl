@@ -1,4 +1,5 @@
 {
+  "$schema": "https://schema.tauri.app/config/2",
   "identifier": "io.zettl.app",
   "build": {
     "devUrl": "http://localhost:1420",
