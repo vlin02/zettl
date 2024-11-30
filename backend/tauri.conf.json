@@ -1,5 +1,5 @@
 {
-  "identifier": "com.zettl.app",
+  "identifier": "io.zettl.app",
   "build": {
     "devUrl": "http://localhost:1420",
     "frontendDist": "../dist"
