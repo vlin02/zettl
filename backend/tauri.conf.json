@@ -3,6 +3,15 @@
   "identifier": "io.zettl.app",
   "build": {
     "devUrl": "http://localhost:1420",
-    "frontendDist": "../dist"
+    "frontendDist": "../frontend/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "width": 800,
+        "height": 600,
+        "url": "popover.html"
+      }
+    ]
   }
 }
