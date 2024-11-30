@@ -1,9 +1,15 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "identifier": "io.zettl.app",
+  "productName": "Zettl",
   "build": {
     "devUrl": "http://localhost:1420",
     "frontendDist": "../frontend/dist"
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "icon": ["./icons/icon.icns"]
   },
   "app": {
     "windows": [
