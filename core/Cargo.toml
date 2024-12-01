@@ -1,9 +1,9 @@
 cargo-features = ["profile-rustflags"]
 
 [package]
+edition = "2021"
 name = "zettl-core"
 version = "0.1.0"
-edition = "2021"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -13,11 +13,10 @@ tauri = { version = "2", features = [] }
 
 [profile.dev]
 incremental = true
-rustflags = ["-Zthreads=8"]
 
 [profile.release]
 panic = "abort"
 codegen-units = 1
 lto = true
 opt-level = "z"
-rustflags = ["-Cdebuginfo=0", "-Zthreads=8"]
+rustflags = ["-Cdebuginfo=0"]
