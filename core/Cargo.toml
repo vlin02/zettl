@@ -1,6 +1,22 @@
+cargo-features = ["trim-paths", "profile-rustflags"]
+
 [package]
 name = "backend"
 version = "0.1.0"
+edition = "2021"
+
+[profile.dev]
+incremental = true
+rustflags = ["-Zthreads=8"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "z"
+panic = "abort"
+strip = true
+trim-paths = "all"
+rustflags = ["-Cdebuginfo=0", "-Zthreads=8"]
 
 [build-dependencies]
 tauri-build = { version = "2.0.3", features = [] }

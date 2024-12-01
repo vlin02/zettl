@@ -1,8 +1,5 @@
 {
   "name": "zettl",
-  "scripts": {
-    "dev": " "
-  },
   "devDependencies": {
     "@tauri-apps/cli": "^2.1.0"
   }
