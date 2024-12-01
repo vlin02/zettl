@@ -8,4 +8,4 @@ start-core:
 
 build:
   cd web; pnpm vite build
-  cd core; pnpm tauri build
+  cd core; pnpm tauri build --bundles app
