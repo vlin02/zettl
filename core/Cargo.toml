@@ -1,3 +1,5 @@
+cargo-features = ["profile-rustflags"]
+
 [package]
 name = "zettl-core"
 version = "0.1.0"
@@ -9,8 +11,13 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+rustflags = ["-Zthreads=8"] # Better compile performance.
+
 [profile.release]
-panic = "abort"
-codegen-units = 1
-lto = true
-opt-level = "z"
+panic = "abort"   # Strip expensive panic clean-up logic
+codegen-units = 1 # Compile crates one after another so the compiler can optimize better
+lto = true        # Enables link to optimizations
+opt-level = "z"   # Optimize for binary size
+rustflags = ["-Cdebuginfo=0", "-Zthreads=8"]
