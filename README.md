@@ -1,0 +1,1 @@
+![logo](/assets/icon.svg)
