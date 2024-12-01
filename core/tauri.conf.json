@@ -18,6 +18,5 @@
     "icon": ["./icons/icon.icns"]
   },
   "identifier": "io.zettl.app",
-  "productName": "Zettl",
-  "plugins": {}
+  "productName": "Zettl"
 }
