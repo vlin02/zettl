@@ -1,1 +1,4 @@
-<h1><img src="/assets/icon.svg" alt="logo" height="32" style="margin-right: 20px"/> Zettl</h1>
+<div align="center">
+  <img src="/assets/icon.svg" alt="logo" height="64"/>
+   <h1>Zettl</h1>
+</div>
