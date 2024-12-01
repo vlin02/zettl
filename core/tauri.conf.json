@@ -1,24 +1,16 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "zettl",
-  "version": "0.1.0",
-  "identifier": "com.tauri1.dev",
-  "build": {
-    "frontendDist": "../web/dist"
-  },
+  "$schema": "https://schema.tauri.app/config/2",
   "app": {
     "windows": [
       {
-        "title": "Zettl",
-        "width": 800,
         "height": 600,
-        "resizable": true,
-        "fullscreen": false
+        "url": "popover.html",
+        "width": 800
       }
-    ],
-    "security": {
-      "csp": null
-    }
+    ]
+  },
+  "build": {
+    "frontendDist": "../web/dist"
   },
   "bundle": {
     "active": true,
@@ -30,5 +22,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
-  }
+  },
+  "identifier": "io.zettl.app",
+  "productName": "Zettl"
 }
