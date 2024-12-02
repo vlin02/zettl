@@ -9,6 +9,7 @@ version = "0.1.0"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+objc = "0.2.7"
 tauri = { version = "2", features = [] }
 
 [profile.dev]
