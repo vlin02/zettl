@@ -1,25 +1,34 @@
-use objc::runtime::{Class, Object};
-use objc_id::Id;
+use std::{thread, time::Duration};
+use syntect::parsing::{SyntaxReference, SyntaxSet};
 
-#[link(name = "AppKit", kind = "framework")]
-extern "C" {}
+mod schema;
 
-// read the core [clipboard-change-count] which can be used as a state
-pub fn clipboard_change_count() -> i64 {
-    use objc::{msg_send, sel, sel_impl};
+fn a() {
+    // Your code for function `a` goes here.
+    println!("Function `a` was called");
+}
 
-    let cls = match Class::get("NSPasteboard") {
-        Some(cls) => cls,
-        None => return -1,
-    };
-    let pasteboard: *mut Object = unsafe { msg_send![cls, generalPasteboard] };
+fn main() {
+    let ss = SyntaxSet::load_defaults_newlines();
+    
+    
+    tauri::Builder::default()
+        .plugin(
+            tauri_plugin_sql::Builder::default()
+                .add_migrations(schema::DB_URL, schema::list_migrations())
+                .build(),
+        )
+        .setup(|_| {
+            let handle = thread::spawn(|| {
+                loop {
+                    a();
+                    thread::sleep(Duration::from_millis(1000)); // Sleep for 100 milliseconds
+                }
+            });
 
-    if pasteboard.is_null() {
-        return -1;
-    }
-
-    let pasteboard: Id<Object> = unsafe { Id::from_ptr(pasteboard) };
-
-    let change_count = unsafe { msg_send![pasteboard, changeCount] };
-    change_count
+            Ok(())
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+    // println!("here2");
 }
