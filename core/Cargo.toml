@@ -8,9 +8,11 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 objc2 = "0.5.2"
+objc2-app-kit = "0.2.2"
 syntect = "5.2.0"
 tauri = { version = "2", features = [] }
 tauri-plugin-sql = "2.0.3"
+magika = { version = "=0.1.0-rc.3-dev", path = "../magika", features = ["serde"] }
 
 [profile.dev]
 incremental = true

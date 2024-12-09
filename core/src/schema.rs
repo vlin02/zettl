@@ -4,9 +4,9 @@ pub fn list_migrations() -> Vec<Migration> {
     vec![Migration {
         version: 1,
         description: "",
-        sql: "CREATE TABLE pasteboard_item (id INTEGER PRIMARY KEY, name TEXT);",
+        sql: "CREATE TABLE pasteboard_item (id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT);",
         kind: MigrationKind::Up,
     }]
 }
 
-pub const DB_URL: &str = "sqlite:mydatabase.db";
+pub const DB_URL: &str = "sqlite:zettl.db";

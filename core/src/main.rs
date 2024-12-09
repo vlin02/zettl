@@ -1,5 +1,5 @@
 use std::{thread, time::Duration};
-use syntect::parsing::{SyntaxReference, SyntaxSet};
+use magika::{sess}
 
 mod schema;
 
@@ -9,9 +9,6 @@ fn a() {
 }
 
 fn main() {
-    let ss = SyntaxSet::load_defaults_newlines();
-    
-    
     tauri::Builder::default()
         .plugin(
             tauri_plugin_sql::Builder::default()
@@ -22,7 +19,7 @@ fn main() {
             let handle = thread::spawn(|| {
                 loop {
                     a();
-                    thread::sleep(Duration::from_millis(1000)); // Sleep for 100 milliseconds
+                    thread::sleep(Duration::from_millis(1000));
                 }
             });
 
@@ -30,5 +27,4 @@ fn main() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-    // println!("here2");
 }
