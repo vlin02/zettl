@@ -1,16 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "app": {
-    "windows": [
-      {
-        "height": 600,
-        "url": "popover.html",
-        "width": 800
-      }
-    ]
-  },
   "build": {
     "frontendDist": "../web/dist"
+  },
+  "plugins": {
+    "sql": {
+      "preload": ["sqlite:zettl.db"]
+    }
   },
   "bundle": {
     "active": true,

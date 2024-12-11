@@ -12,37 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::borrow::Cow;
-
-use crate::ContentType;
-
 #[derive(Debug)]
-pub(crate) struct ModelConfig {
-    pub(crate) beg_size: usize,
-    pub(crate) mid_size: usize,
-    pub(crate) end_size: usize,
-    pub(crate) use_inputs_at_offsets: bool,
-    pub(crate) min_file_size_for_dl: usize,
-    pub(crate) padding_token: i32,
-    pub(crate) block_size: usize,
-    pub(crate) thresholds: Cow<'static, [f32; ContentType::SIZE]>,
-    pub(crate) overwrite_map: Cow<'static, [ContentType; ContentType::SIZE]>,
+pub struct ModelConfig {
+    pub beg_size: usize,
+    pub mid_size: usize,
+    pub end_size: usize,
+    pub use_inputs_at_offsets: bool,
+    pub padding_token: i32,
+    pub block_size: usize,
 }
 
-pub(crate) struct SplitFeatures<'a> {
-    pub(crate) beg: &'a mut [i32],
-    pub(crate) mid: &'a mut [i32],
-    pub(crate) end: &'a mut [i32],
-    pub(crate) off: Vec<(usize, &'a mut [i32])>,
+pub struct SplitFeatures<'a> {
+    pub beg: &'a mut [i32],
+    pub mid: &'a mut [i32],
+    pub end: &'a mut [i32],
+    pub off: Vec<(usize, &'a mut [i32])>,
 }
 
 impl ModelConfig {
-    pub(crate) fn features_size(&self) -> usize {
+    pub fn features_size(&self) -> usize {
         let offsets_size = if self.use_inputs_at_offsets { 4 * 8 } else { 0 };
         self.beg_size + self.mid_size + self.end_size + offsets_size
     }
 
-    pub(crate) fn split_features<'a>(&self, features: &'a mut [i32]) -> SplitFeatures<'a> {
+    pub fn split_features<'a>(&self, features: &'a mut [i32]) -> SplitFeatures<'a> {
         let (beg, features) = features.split_at_mut(self.beg_size);
         let (mid, features) = features.split_at_mut(self.mid_size);
         let (end, mut features) = features.split_at_mut(self.end_size);
