@@ -11,9 +11,11 @@ pub fn list_migrations() -> Vec<Migration> {
         description: "",
         sql: "
 CREATE TABLE
-  pb_item (
+  snippet (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT,
+    type TEXT,
+    html TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
