@@ -4,13 +4,18 @@ use std::{
     time::Duration,
 };
 
-use detection::infer_content_type;
+use detection::infer_format;
 use handler::list_snippets;
 use objc2_app_kit::{NSPasteboard, NSStringPboardType};
 use objc2_foundation::NSString;
 use session::{Context, Session};
+use sqlx::{
+    prelude::FromRow,
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
+    SqlitePool,
+};
 use syntect::parsing::SyntaxSet;
-use tauri::{generate_handler, Manager};
+use tauri::{async_runtime::block_on, generate_handler, Manager};
 
 mod db;
 mod detection;
@@ -62,11 +67,11 @@ async fn start_monitoring(session: &Session, copy_rx: Receiver<String>) {
     let pool = session.pool();
 
     for content in copy_rx {
-        let content_type = infer_content_type(ort, lookup, &content);
+        let format = infer_format(ort, lookup, &content);
 
-        sqlx::query("INSERT INTO snippet (content, content_type) VALUES (?, ?)")
+        sqlx::query("INSERT INTO snippet (content, format) VALUES (?, ?)")
             .bind(content)
-            .bind(content_type.key())
+            .bind(format.key())
             .execute(&pool)
             .await
             .unwrap();
@@ -86,28 +91,6 @@ fn main() -> Result<(), ort::Error> {
                 .build(),
         )
         .invoke_handler(generate_handler![list_snippets])
-        .setup(|app| {
-            
-            app.manage(Context {
-                ort: ort::session::Session::builder()
-                    .unwrap()
-                    .commit_from_memory(include_bytes!("model.onnx"))
-                    .unwrap(),
-                syntax_set: SyntaxSet::load_defaults_newlines(),
-                lookup: lookup::Table::new(),
-                paste_tx,
-            });
-
-            let handle = app.handle().clone();
-
-            tauri::async_runtime::spawn(async move {
-                let session = Session::new(handle);
-
-                start_monitoring(&session, copy_rx).await;
-            });
-
-            Ok(())
-        })
         .run(tauri::generate_context!())
         .unwrap();
 

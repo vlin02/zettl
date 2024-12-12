@@ -1,4 +1,4 @@
-use content_type::{ContentType, CONTENT_TYPES};
+use format::{Format, FORMATS};
 use features::extract_features;
 use ndarray::{Array2, ArrayViewD};
 
@@ -8,7 +8,7 @@ use ort::{inputs, session::Session};
 use crate::lookup;
 
 mod config;
-pub mod content_type;
+pub mod format;
 mod features;
 
 const CONFIG: ModelConfig = ModelConfig {
@@ -40,8 +40,8 @@ const FREQUENCY_WEIGHT: f32 = 0.05;
 fn apply_bayes(lookup: &lookup::Table, probabilities: &[f32]) -> Vec<f32> {
     let vals: Vec<f32> = (0..probabilities.len())
         .map(|i| {
-            let content_type = CONTENT_TYPES[i];
-            let (p, freq) = (probabilities[i], lookup.frequency[&content_type]);
+            let format = FORMATS[i];
+            let (p, freq) = (probabilities[i], lookup.frequency[&format]);
             return freq.powf(FREQUENCY_WEIGHT) * p;
         })
         .collect();
@@ -51,7 +51,7 @@ fn apply_bayes(lookup: &lookup::Table, probabilities: &[f32]) -> Vec<f32> {
     vals.iter().map(|x| x / tot).collect()
 }
 
-pub fn infer_content_type(ort: &Session, lookup: &lookup::Table, content: &str) -> ContentType {
+pub fn infer_format(ort: &Session, lookup: &lookup::Table, content: &str) -> Format {
     let ps = get_probabilities(ort, content);
     let ps = apply_bayes(&lookup, &ps);
 
@@ -62,5 +62,5 @@ pub fn infer_content_type(ort: &Session, lookup: &lookup::Table, content: &str) 
         }
     }
 
-    CONTENT_TYPES[max_i].clone()
+    FORMATS[max_i].clone()
 }

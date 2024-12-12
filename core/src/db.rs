@@ -14,21 +14,20 @@ CREATE TABLE
   snippet (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT,
-    type TEXT,
-    html TEXT,
+    format TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
-CREATE VIRTUAL TABLE pb_item_fts USING fts5 (content);
+CREATE VIRTUAL TABLE snippet_fts USING fts5 (content, tokenize=\"trigram\");
 
-CREATE TRIGGER trigger_insert_pb_item AFTER INSERT ON pb_item
+CREATE TRIGGER trigger_insert_snippet AFTER INSERT ON snippet
 BEGIN
-    INSERT INTO pb_item_fts(rowid, content) VALUES (new.id, new.content);
+    INSERT INTO snippet_fts(rowid, content) VALUES (new.id, new.content);
 END;
 
-CREATE TRIGGER trigger_delete_pb_item AFTER DELETE ON pb_item
+CREATE TRIGGER trigger_delete_snippet AFTER DELETE ON snippet
 BEGIN
-    DELETE FROM pb_item_fts WHERE rowid = old.id;
+    DELETE FROM snippet_fts WHERE rowid = old.id;
 END;
 ",
         kind: MigrationKind::Up,
