@@ -21,10 +21,10 @@ serde = "1.0.216"
 serde_json = "1.0.133"
 tauri-plugin-positioner = { version = "2.2.0", features = ["tray-icon"] }
 tauri-plugin-global-shortcut = "2.2.0"
+window-vibrancy = "0.5.2"
 
 [profile.dev]
 incremental = true
-opt-level = 3
 
 [profile.release]
 panic = "abort"

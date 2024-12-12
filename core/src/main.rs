@@ -101,7 +101,7 @@ fn main() -> Result<(), ort::Error> {
                 start_monitoring(&session, copy_rx).await;
             });
 
-            app.handle().plugin(
+            handle.plugin(
                 tauri_plugin_global_shortcut::Builder::new()
                     .with_handler(move |_app, shortcut, event| {
                         println!("{:?}", shortcut);

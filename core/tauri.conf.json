@@ -10,6 +10,7 @@
   },
   "app": {
     "macOSPrivateApi": true,
+    "windows": [{ "decorations": false, "transparent": true }],
     "security": {
       "capabilities": ["global-shortcut:allow-register"]
     }

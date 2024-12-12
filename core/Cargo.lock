@@ -5587,4 +5587,5 @@ dependencies = [
  "tauri-plugin-positioner",
  "tauri-plugin-sql",
  "tokio",
+ "window-vibrancy",
 ]
