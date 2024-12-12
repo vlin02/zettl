@@ -16,6 +16,7 @@ use sqlx::{
 };
 use syntect::parsing::SyntaxSet;
 use tauri::{async_runtime::block_on, generate_handler, tray::TrayIcon, Manager};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 mod db;
 mod detection;
@@ -90,21 +91,28 @@ fn main() -> Result<(), ort::Error> {
                 .add_migrations(db::URL, db::list_migrations())
                 .build(),
         )
-        .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
             let handle = app.handle().clone();
 
-            tauri::async_runtime::spawn(async move {
-                let session = Session::new(handle);
+            handle.plugin(tauri_plugin_positioner::init());
+            let session = Session::new(handle);
+
+            tauri::async_runtime::spawn(async {
                 start_monitoring(&session, copy_rx).await;
             });
+
+            app.handle().plugin(
+                tauri_plugin_global_shortcut::Builder::new()
+                    .with_handler(move |_app, shortcut, event| {
+                        println!("{:?}", shortcut);
+                    }),
+            );
 
             Ok(())
         })
         .invoke_handler(generate_handler![list_snippets])
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::Focused(is_focused) => {
-                window.
                 if !is_focused {
                     window.hide().unwrap();
                 }

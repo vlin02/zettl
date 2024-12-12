@@ -11,19 +11,8 @@
   "app": {
     "macOSPrivateApi": true,
     "security": {
-      "assetProtocol": {
-        "enable": false,
-        "scope": []
-      },
-      "capabilities": [],
-      "dangerousDisableAssetCspModification": false,
-      "freezePrototype": false,
-      "pattern": {
-        "use": "brownfield"
-      }
-    },
-    "windows": [],
-    "withGlobalTauri": false
+      "capabilities": ["global-shortcut:allow-register"]
+    }
   },
   "bundle": {
     "active": true,
