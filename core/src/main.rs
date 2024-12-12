@@ -15,7 +15,7 @@ use sqlx::{
     SqlitePool,
 };
 use syntect::parsing::SyntaxSet;
-use tauri::{async_runtime::block_on, generate_handler, Manager};
+use tauri::{async_runtime::block_on, generate_handler, tray::TrayIcon, Manager};
 
 mod db;
 mod detection;
@@ -90,7 +90,27 @@ fn main() -> Result<(), ort::Error> {
                 .add_migrations(db::URL, db::list_migrations())
                 .build(),
         )
+        .plugin(tauri_plugin_positioner::init())
+        .setup(|app| {
+            let handle = app.handle().clone();
+
+            tauri::async_runtime::spawn(async move {
+                let session = Session::new(handle);
+                start_monitoring(&session, copy_rx).await;
+            });
+
+            Ok(())
+        })
         .invoke_handler(generate_handler![list_snippets])
+        .on_window_event(|window, event| match event {
+            tauri::WindowEvent::Focused(is_focused) => {
+                window.
+                if !is_focused {
+                    window.hide().unwrap();
+                }
+            }
+            _ => {}
+        })
         .run(tauri::generate_context!())
         .unwrap();
 

@@ -8,6 +8,23 @@
       "preload": ["sqlite:zettl.db"]
     }
   },
+  "app": {
+    "macOSPrivateApi": true,
+    "security": {
+      "assetProtocol": {
+        "enable": false,
+        "scope": []
+      },
+      "capabilities": [],
+      "dangerousDisableAssetCspModification": false,
+      "freezePrototype": false,
+      "pattern": {
+        "use": "brownfield"
+      }
+    },
+    "windows": [],
+    "withGlobalTauri": false
+  },
   "bundle": {
     "active": true,
     "icon": [

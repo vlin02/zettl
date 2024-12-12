@@ -4130,6 +4130,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tauri-plugin-positioner"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c95b371d489bee3d1be5e5bd1538080ad408317fcc2d8546d24b290249f7bb5"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.3",
+]
+
+[[package]]
 name = "tauri-plugin-sql"
 version = "2.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5536,6 +5551,7 @@ dependencies = [
  "syntect",
  "tauri",
  "tauri-build",
+ "tauri-plugin-positioner",
  "tauri-plugin-sql",
  "tokio",
 ]
