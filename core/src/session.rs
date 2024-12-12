@@ -1,10 +1,50 @@
+use std::sync::mpsc::Sender;
+
 use syntect::parsing::SyntaxSet;
+use tauri::{AppHandle, Manager};
+use tauri_plugin_sql::DbPool;
 
-use crate::{db, detection::LookupTable};
+use crate::{db, lookup};
 
-pub struct Session<'a> {
-  pub lookup: LookupTable,
-  pub syntax_set: SyntaxSet,
-  pub pool: &'a db::Pool,
-  pub ort: ort::session::Session
+pub struct Session {
+    handle: AppHandle,
+}
+
+pub struct Context {
+    pub ort: ort::session::Session,
+    pub syntax_set: SyntaxSet,
+    pub lookup: lookup::Table,
+    pub paste_tx: Sender<String>,
+}
+
+impl Context {
+    fn new(paste_tx: Sender<String>) -> Context {
+        Context {
+            ort: ort::session::Session::builder()
+                .unwrap()
+                .commit_from_memory(include_bytes!("model.onnx"))
+                .unwrap(),
+            syntax_set: SyntaxSet::load_defaults_newlines(),
+            lookup: lookup::Table::new(),
+            paste_tx,
+        }
+    }
+}
+
+impl Session {
+    pub fn new(handle: AppHandle) -> Session {
+        Session { handle }
+    }
+
+    pub fn pool(&self) -> db::Pool {
+        let instances = &*self.handle.state::<tauri_plugin_sql::DbInstances>();
+        let instances = instances.0.blocking_read();
+
+        let DbPool::Sqlite(pool) = instances.get(db::URL).unwrap();
+        pool.clone()
+    }
+
+    pub fn ctx(&self) -> tauri::State<'_, Context> {
+        self.handle.state::<Context>()
+    }
 }

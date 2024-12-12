@@ -1,24 +1,25 @@
 use std::{
-    sync::mpsc::{self, Receiver, Sender},
+    sync::mpsc::{channel, Receiver, Sender},
     thread,
     time::Duration,
 };
 
-use detection::{infer_content_type, LookupTable};
-use highlight::generate_html;
+use detection::infer_content_type;
+use handler::list_snippets;
 use objc2_app_kit::{NSPasteboard, NSStringPboardType};
 use objc2_foundation::NSString;
-use session::Session;
+use session::{Context, Session};
 use syntect::parsing::SyntaxSet;
-use tauri::Manager;
-use tauri_plugin_sql::DbPool;
+use tauri::{generate_handler, Manager};
 
 mod db;
 mod detection;
+mod handler;
 mod highlight;
+pub mod lookup;
 mod session;
 
-const PASTEBOARD_POOL_MS: u64 = 500;
+const PASTEBOARD_POOL_MS: u64 = 100;
 
 fn listen_pasteboard(copy_tx: Sender<String>, paste_rx: Receiver<String>) {
     thread::spawn(move || {
@@ -56,26 +57,25 @@ fn listen_pasteboard(copy_tx: Sender<String>, paste_rx: Receiver<String>) {
     });
 }
 
-async fn start_monitoring(session: Session<'_>, copy_rx: Receiver<String>) {
-    let Session { ort, lookup, syntax_set, pool } = session;
+async fn start_monitoring(session: &Session, copy_rx: Receiver<String>) {
+    let Context { ort, lookup, .. } = &*session.ctx();
+    let pool = session.pool();
 
     for content in copy_rx {
-        let content_type = infer_content_type(&ort, &lookup, &content);
-        let html = generate_html(&syntax_set, &content, content_type);
+        let content_type = infer_content_type(ort, lookup, &content);
 
-        sqlx::query("INSERT INTO snippet (content, content_type, html) VALUES (?, ?, ?)")
+        sqlx::query("INSERT INTO snippet (content, content_type) VALUES (?, ?)")
             .bind(content)
-            .bind(content_type.name())
-            .bind(html)
-            .execute(pool)
+            .bind(content_type.key())
+            .execute(&pool)
             .await
             .unwrap();
     }
 }
 
 fn main() -> Result<(), ort::Error> {
-    let (copy_tx, copy_rx) = mpsc::channel::<String>();
-    let (paste_tx, paste_rx) = mpsc::channel::<String>();
+    let (copy_tx, copy_rx) = channel::<String>();
+    let (paste_tx, paste_rx) = channel::<String>();
 
     listen_pasteboard(copy_tx, paste_rx);
 
@@ -85,25 +85,25 @@ fn main() -> Result<(), ort::Error> {
                 .add_migrations(db::URL, db::list_migrations())
                 .build(),
         )
+        .invoke_handler(generate_handler![list_snippets])
         .setup(|app| {
+            
+            app.manage(Context {
+                ort: ort::session::Session::builder()
+                    .unwrap()
+                    .commit_from_memory(include_bytes!("model.onnx"))
+                    .unwrap(),
+                syntax_set: SyntaxSet::load_defaults_newlines(),
+                lookup: lookup::Table::new(),
+                paste_tx,
+            });
+
             let handle = app.handle().clone();
 
             tauri::async_runtime::spawn(async move {
-                let instances = &*handle.try_state::<tauri_plugin_sql::DbInstances>().unwrap();
-                let instances = instances.0.read().await;
-                let DbPool::Sqlite(pool) = instances.get(db::URL).unwrap();
+                let session = Session::new(handle);
 
-                let session = Session {
-                    ort: ort::session::Session::builder()
-                        .unwrap()
-                        .commit_from_memory(include_bytes!("model.onnx"))
-                        .unwrap(),
-                    syntax_set: SyntaxSet::load_defaults_newlines(),
-                    lookup: LookupTable::new(),
-                    pool
-                };
-                
-                start_monitoring(session, copy_rx);
+                start_monitoring(&session, copy_rx).await;
             });
 
             Ok(())

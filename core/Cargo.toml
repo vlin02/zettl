@@ -14,13 +14,14 @@ tauri = { version = "2", features = [] }
 tauri-plugin-sql = { version = "2.0.3", features = ["sqlite"] }
 ort = "2.0.0-rc.9"
 sqlx = "0.8.2"
-serde_json = "1.0.133"
 tokio = "1.42.0"
 objc2-foundation = "0.2.2"
 ndarray = "0.16.1"
+serde = "1.0.216"
 
 [profile.dev]
 incremental = true
+opt-level = 3
 
 [profile.release]
 panic = "abort"

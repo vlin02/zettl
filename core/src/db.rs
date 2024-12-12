@@ -1,9 +1,9 @@
 use sqlx::SqlitePool;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
-pub const URL: &str = "sqlite:zettl.db";
-
 pub type Pool = SqlitePool;
+
+pub const URL: &str = "sqlite:zettl.db";
 
 pub fn list_migrations() -> Vec<Migration> {
     vec![Migration {

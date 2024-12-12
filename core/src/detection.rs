@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-
 use content_type::{ContentType, CONTENT_TYPES};
 use features::extract_features;
 use ndarray::{Array2, ArrayViewD};
 
 use config::ModelConfig;
 use ort::{inputs, session::Session};
+
+use crate::lookup;
 
 mod config;
 pub mod content_type;
@@ -37,74 +37,7 @@ pub fn get_probabilities(ort: &Session, content: &str) -> Vec<f32> {
 
 const FREQUENCY_WEIGHT: f32 = 0.05;
 
-pub struct LookupTable {
-    frequency: HashMap<ContentType, f32>,
-}
-
-fn so_frequency(content_type: ContentType) -> f32 {
-    match content_type {
-        ContentType::JavaScript => 0.11635059103195514 + 0.07184242458097091, // typescript
-        ContentType::Html => 0.04936800389,
-        ContentType::Css => 0.04936800389,
-        ContentType::Python => 0.09533163890725034 + 0.011569268200339506, // lua
-        ContentType::Shell => 0.063345467410228,
-        ContentType::Java => 0.05660189986748719,
-        ContentType::C => {
-            0.03781114907535851 + 0.050640375132280056 + 0.04290994404669913 + 0.011153420040777946
-        } // c#, c++, dart
-        ContentType::Php => 0.0339847253384973,
-        ContentType::PowerShell => 0.02584465278230349,
-        ContentType::Go => 0.025146400275576988,
-        ContentType::Rust => 0.02345818088153603,
-        ContentType::Scala => 0.017580446447136078, // kotlin
-        _ => 0.0,
-    }
-}
-
-impl LookupTable {
-    pub fn new() -> LookupTable {
-        let total_freq: f32 = [
-            ContentType::JavaScript,
-            ContentType::Html,
-            ContentType::Css,
-            ContentType::Python,
-            ContentType::Shell,
-            ContentType::Java,
-            ContentType::C,
-            ContentType::Php,
-            ContentType::PowerShell,
-            ContentType::Go,
-            ContentType::Rust,
-            ContentType::Scala,
-        ]
-        .iter()
-        .map(|&x| so_frequency(x))
-        .sum();
-
-        let leftover_freq = 1.0 - total_freq;
-        let mut frequency: HashMap<ContentType, f32> = HashMap::new();
-
-        let mut leftover_content_types: Vec<ContentType> = Vec::new();
-
-        for content_type in CONTENT_TYPES {
-            let freq = so_frequency(content_type);
-            if freq > 0.0 || !content_type.is_text() {
-                frequency.insert(content_type, freq);
-            } else {
-                leftover_content_types.push(content_type);
-            }
-        }
-
-        let base_freq = leftover_freq / leftover_content_types.len() as f32;
-        for content_type in leftover_content_types {
-            frequency.insert(content_type, base_freq);
-        }
-
-        LookupTable { frequency }
-    }
-}
-
-fn apply_bayes(lookup: &LookupTable, probabilities: &[f32]) -> Vec<f32> {
+fn apply_bayes(lookup: &lookup::Table, probabilities: &[f32]) -> Vec<f32> {
     let vals: Vec<f32> = (0..probabilities.len())
         .map(|i| {
             let content_type = CONTENT_TYPES[i];
@@ -118,7 +51,7 @@ fn apply_bayes(lookup: &LookupTable, probabilities: &[f32]) -> Vec<f32> {
     vals.iter().map(|x| x / tot).collect()
 }
 
-pub fn infer_content_type(ort: &Session, lookup: &LookupTable, content: &str) -> ContentType {
+pub fn infer_content_type(ort: &Session, lookup: &lookup::Table, content: &str) -> ContentType {
     let ps = get_probabilities(ort, content);
     let ps = apply_bayes(&lookup, &ps);
 

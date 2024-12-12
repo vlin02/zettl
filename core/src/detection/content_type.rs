@@ -350,7 +350,7 @@ impl ContentType {
         }
     }
 
-    pub fn name(&self) -> &str {
+    pub fn key(&self) -> &str {
         match self {
             ContentType::Ai => "Ai",
             ContentType::Apk => "Apk",
