@@ -1,6 +1,8 @@
 use syntect::{
-    html::{ClassStyle, ClassedHTMLGenerator},
-    parsing::{self, SyntaxSet},
+    easy::HighlightLines,
+    highlighting::Theme,
+    html::{append_highlighted_html_for_styled_line, ClassStyle, ClassedHTMLGenerator},
+    parsing::{self, SyntaxReference, SyntaxSet},
     util::LinesWithEndings,
 };
 
@@ -39,19 +41,40 @@ pub fn format_to_scope(format: Format) -> parsing::Scope {
     parsing::Scope::new(str).unwrap()
 }
 
-pub fn generate_html(syntax_set: &SyntaxSet, content: &str, format: Format) -> String {
-    let scope = format_to_scope(format);
-    let syntax = syntax_set.find_syntax_by_scope(scope).unwrap();
-
-    let mut generator =
-        ClassedHTMLGenerator::new_with_class_style(syntax, syntax_set, ClassStyle::Spaced);
-
-    for line in LinesWithEndings::from(&content) {
-        generator
-            .parse_html_for_line_which_includes_newline(line)
-            .unwrap();
+pub fn highlight_as_html(
+    syntax_set: &SyntaxSet,
+    syntax: &SyntaxReference,
+    theme: &Theme,
+    s: &str,
+) -> Result<String, syntect::Error> {
+    let mut highlighter = HighlightLines::new(syntax, theme);
+    let mut output = String::new();
+    for line in LinesWithEndings::from(s) {
+        let regions = highlighter.highlight_line(line, syntax_set)?;
+        append_highlighted_html_for_styled_line(
+            &regions[..],
+            syntect::html::IncludeBackground::No,
+            &mut output,
+        )?;
     }
 
-    let inner_html = generator.finalize();
-    format!("<pre class=\"code\">{inner_html}</pre>")
+    Ok(output)
+}
+
+pub fn preview_target_in_content(input: &str, target: &str, line_count: i32) -> String {
+    let mut output = String::new();
+    let mut curr_count = 0;
+
+    for line in LinesWithEndings::from(input) {
+        if curr_count > 0 || line.to_ascii_lowercase().contains(target) {
+            output += line;
+            curr_count += 1;
+        }
+
+        if curr_count == line_count {
+            break;
+        }
+    }
+
+    output
 }

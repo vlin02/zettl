@@ -14,15 +14,21 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     SqlitePool,
 };
-use syntect::parsing::SyntaxSet;
-use tauri::{async_runtime::block_on, generate_handler, tray::TrayIcon, Manager};
+use syntax::preview_target_in_content;
+use syntect::{highlighting::ThemeSet, parsing::SyntaxSet};
+use tauri::{
+    async_runtime::block_on, generate_handler, tray::TrayIcon, window::Color, Manager,
+    PhysicalPosition, WebviewWindowBuilder,
+};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
+
+use tauri_plugin_positioner::{Position, WindowExt};
 
 mod db;
 mod detection;
 mod handler;
-mod highlight;
+mod syntax;
 pub mod lookup;
 mod session;
 
@@ -94,6 +100,7 @@ fn main() -> Result<(), ort::Error> {
         )
         .setup(|app| {
             app.manage(Context {
+                theme_set: ThemeSet::load_defaults(),
                 ort: ort::session::Session::builder()
                     .unwrap()
                     .commit_from_memory(include_bytes!("model.onnx"))
@@ -107,17 +114,49 @@ fn main() -> Result<(), ort::Error> {
 
             handle.plugin(tauri_plugin_positioner::init())?;
 
-            let ctrl_n_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyN);
+            let popover_window = tauri::WebviewWindowBuilder::new(
+                app,
+                "popover",
+                tauri::WebviewUrl::App("index.html".into()),
+            )
+            .inner_size(400.0, 800.0)
+            .always_on_top(true)
+            .background_color(Color(205, 254, 194, 1))
+            .shadow(false)
+            .transparent(true)
+            .build()?;
+            apply_vibrancy(&popover_window, NSVisualEffectMaterial::Popover, None, None)?;
+
+            popover_window.show()?;
+
+            let alt_p = Shortcut::new(Some(Modifiers::ALT), Code::KeyP);
+            let esc = Shortcut::new(None, Code::Escape);
 
             handle.plugin(
                 tauri_plugin_global_shortcut::Builder::new()
-                    .with_handler(move |_, shortcut, event| {
-                        println!("{:?}", shortcut);
+                    .with_handler(move |app, shortcut, event| {
+                        if event.state != ShortcutState::Released {
+                            return;
+                        }
+
+                        if shortcut == &alt_p {
+                            let pos = app.cursor_position().unwrap();
+                            popover_window.set_position(pos);
+                            popover_window.show();
+                            popover_window.set_focus();
+                        }
+
+                        // if shortcut == &esc {
+                        //     if popover_window.is_visible().unwrap() {
+                        //         popover_window.hide();
+                        //     }
+                        // }
                     })
                     .build(),
             )?;
 
-            handle.global_shortcut().register(ctrl_n_shortcut)?;
+            handle.global_shortcut().register(alt_p)?;
+            handle.global_shortcut().register(esc)?;
 
             tauri::async_runtime::spawn(async {
                 let session = Session::new(handle);
@@ -128,17 +167,22 @@ fn main() -> Result<(), ort::Error> {
             Ok(())
         })
         .invoke_handler(generate_handler![list_snippets])
-        .on_window_event(|window, event| match event {
-            tauri::WindowEvent::Focused(is_focused) => {
-                if !is_focused {
-                    window.hide().unwrap();
-                    apply_vibrancy(window, Semantic ::, state, radius)
+        .on_window_event(|window, event| {
+            if window.label() == "popover" {
+                match event {
+                    tauri::WindowEvent::Focused(is_focused) => {
+                        if !is_focused {
+                            // window.hide().unwrap();
+                        }
+                    }
+                    _ => {}
                 }
             }
-            _ => {}
         })
         .run(tauri::generate_context!())
         .unwrap();
 
     Ok(())
 }
+
+

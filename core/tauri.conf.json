@@ -1,34 +1,16 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "build": {
+    "devUrl": "http://localhost:1420",
     "frontendDist": "../web/dist"
   },
-  
   "plugins": {
     "sql": {
       "preload": ["sqlite:zettl.db"]
     }
   },
   "app": {
-    "macOSPrivateApi": true,
-    "security": {
-      "capabilities": [{
-        "identifier": "default",
-        "windows": ["*"],
-        "permissions": [
-          "global-shortcut:allow-is-registered",
-          "global-shortcut:allow-register",
-          "global-shortcut:allow-unregister"
-        ]
-      }]
-    },
-    "windows": [
-      {
-        "height": 600,
-        "url": "index.html",
-        "width": 800
-      }
-    ]
+    "macOSPrivateApi": true
   },
   "bundle": {
     "active": true,

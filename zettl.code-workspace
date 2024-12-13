@@ -9,5 +9,11 @@
     {
       "path": "./core"
     }
-  ]
+  ],
+  "settings": {
+    "rust-analyzer.cargo.targetDir": true,
+    "rust-analyzer.cargo.extraEnv": {
+      "RUSTFLAGS": "-A dead_code"
+    }
+  }
 }
