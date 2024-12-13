@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { listSnippets, type Snippet } from "./api"
+  import { listSnippets, type Snippet } from "../api"
   import { Search } from "lucide-svelte"
 
   let search: string = $state("")
@@ -23,10 +23,7 @@
         }
 
         timeout = window.setTimeout(async () => {
-          const s = new Date()
           snippets = await listSnippets({ search })
-          const e = new Date()
-          console.log(e - s)
         }, 50)
       }}
       type="text"
