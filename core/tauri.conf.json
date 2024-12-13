@@ -3,6 +3,7 @@
   "build": {
     "frontendDist": "../web/dist"
   },
+  
   "plugins": {
     "sql": {
       "preload": ["sqlite:zettl.db"]
@@ -10,10 +11,24 @@
   },
   "app": {
     "macOSPrivateApi": true,
-    "windows": [{ "decorations": false, "transparent": true }],
     "security": {
-      "capabilities": ["global-shortcut:allow-register"]
-    }
+      "capabilities": [{
+        "identifier": "default",
+        "windows": ["*"],
+        "permissions": [
+          "global-shortcut:allow-is-registered",
+          "global-shortcut:allow-register",
+          "global-shortcut:allow-unregister"
+        ]
+      }]
+    },
+    "windows": [
+      {
+        "height": 600,
+        "url": "index.html",
+        "width": 800
+      }
+    ]
   },
   "bundle": {
     "active": true,

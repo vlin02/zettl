@@ -23,7 +23,7 @@ pub struct Snippet {
 #[tauri::command]
 pub async fn list_snippets(handle: tauri::AppHandle, request: ListSnippetsRequest) -> Vec<Snippet> {
     let session = Session::new(handle);
-    let pool = session.pool();
+    let pool = session.pool().await;
     let Context {
         syntax_set, lookup, ..
     } = &*session.ctx();

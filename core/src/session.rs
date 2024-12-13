@@ -36,9 +36,9 @@ impl Session {
         Session { handle }
     }
 
-    pub fn pool(&self) -> db::Pool {
+    pub async fn pool(&self) -> db::Pool {
         let instances = &*self.handle.state::<tauri_plugin_sql::DbInstances>();
-        let instances = instances.0.blocking_read();
+        let instances = instances.0.read().await;
 
         let DbPool::Sqlite(pool) = instances.get(db::URL).unwrap();
         pool.clone()

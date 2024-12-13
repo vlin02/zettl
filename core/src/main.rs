@@ -17,6 +17,7 @@ use sqlx::{
 use syntect::parsing::SyntaxSet;
 use tauri::{async_runtime::block_on, generate_handler, tray::TrayIcon, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 
 mod db;
 mod detection;
@@ -65,7 +66,7 @@ fn listen_pasteboard(copy_tx: Sender<String>, paste_rx: Receiver<String>) {
 
 async fn start_monitoring(session: &Session, copy_rx: Receiver<String>) {
     let Context { ort, lookup, .. } = &*session.ctx();
-    let pool = session.pool();
+    let pool = session.pool().await;
 
     for content in copy_rx {
         let format = infer_format(ort, lookup, &content);
@@ -92,21 +93,37 @@ fn main() -> Result<(), ort::Error> {
                 .build(),
         )
         .setup(|app| {
+            app.manage(Context {
+                ort: ort::session::Session::builder()
+                    .unwrap()
+                    .commit_from_memory(include_bytes!("model.onnx"))
+                    .unwrap(),
+                syntax_set: SyntaxSet::load_defaults_newlines(),
+                lookup: lookup::Table::new(),
+                paste_tx,
+            });
+
             let handle = app.handle().clone();
 
-            handle.plugin(tauri_plugin_positioner::init());
-            let session = Session::new(handle);
+            handle.plugin(tauri_plugin_positioner::init())?;
 
-            tauri::async_runtime::spawn(async {
-                start_monitoring(&session, copy_rx).await;
-            });
+            let ctrl_n_shortcut = Shortcut::new(Some(Modifiers::CONTROL), Code::KeyN);
 
             handle.plugin(
                 tauri_plugin_global_shortcut::Builder::new()
-                    .with_handler(move |_app, shortcut, event| {
+                    .with_handler(move |_, shortcut, event| {
                         println!("{:?}", shortcut);
-                    }),
-            );
+                    })
+                    .build(),
+            )?;
+
+            handle.global_shortcut().register(ctrl_n_shortcut)?;
+
+            tauri::async_runtime::spawn(async {
+                let session = Session::new(handle);
+
+                start_monitoring(&session, copy_rx).await;
+            });
 
             Ok(())
         })
@@ -115,6 +132,7 @@ fn main() -> Result<(), ort::Error> {
             tauri::WindowEvent::Focused(is_focused) => {
                 if !is_focused {
                     window.hide().unwrap();
+                    apply_vibrancy(window, Semantic ::, state, radius)
                 }
             }
             _ => {}
