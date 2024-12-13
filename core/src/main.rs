@@ -8,7 +8,7 @@ use detection::infer_format;
 use handler::list_snippets;
 use objc2_app_kit::{NSPasteboard, NSStringPboardType};
 use objc2_foundation::NSString;
-use session::{Context, Session};
+use session::{Session, Session};
 use sqlx::{
     prelude::FromRow,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
@@ -29,6 +29,7 @@ mod db;
 mod detection;
 mod handler;
 mod syntax;
+mod snippet;
 pub mod lookup;
 mod session;
 
@@ -71,7 +72,7 @@ fn listen_pasteboard(copy_tx: Sender<String>, paste_rx: Receiver<String>) {
 }
 
 async fn start_monitoring(session: &Session, copy_rx: Receiver<String>) {
-    let Context { ort, lookup, .. } = &*session.ctx();
+    let Session { ort, lookup, .. } = &*session.ctx();
     let pool = session.pool().await;
 
     for content in copy_rx {
@@ -99,7 +100,7 @@ fn main() -> Result<(), ort::Error> {
                 .build(),
         )
         .setup(|app| {
-            app.manage(Context {
+            app.manage(Session {
                 theme_set: ThemeSet::load_defaults(),
                 ort: ort::session::Session::builder()
                     .unwrap()

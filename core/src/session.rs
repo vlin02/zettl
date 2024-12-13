@@ -7,20 +7,26 @@ use tauri_plugin_sql::DbPool;
 use crate::{db, lookup};
 
 pub struct Session {
-    handle: AppHandle,
-}
-
-pub struct Context {
     pub ort: ort::session::Session,
     pub syntax_set: SyntaxSet,
     pub theme_set: ThemeSet,
     pub lookup: lookup::Table,
     pub paste_tx: Sender<String>,
+    pub pool: db::Pool,
 }
 
-impl Context {
-    pub fn new(paste_tx: Sender<String>) -> Context {
-        Context {
+async fn create_pool_from_handle(handle: AppHandle) -> db::Pool {
+    let instances = &*handle.state::<tauri_plugin_sql::DbInstances>();
+    let instances = instances.0.read().await;
+
+    let DbPool::Sqlite(pool) = instances.get(db::URL).unwrap();
+
+    pool.clone()
+}
+
+impl Session {
+    pub async fn new(handle: AppHandle, paste_tx: Sender<String>) -> Session {
+        Session {
             ort: ort::session::Session::builder()
                 .unwrap()
                 .commit_from_memory(include_bytes!("model.onnx"))
@@ -28,25 +34,8 @@ impl Context {
             syntax_set: SyntaxSet::load_defaults_newlines(),
             theme_set: ThemeSet::load_defaults(),
             lookup: lookup::Table::new(),
+            pool: create_pool_from_handle(handle).await,
             paste_tx,
         }
-    }
-}
-
-impl Session {
-    pub fn new(handle: AppHandle) -> Session {
-        Session { handle }
-    }
-
-    pub async fn pool(&self) -> db::Pool {
-        let instances = &*self.handle.state::<tauri_plugin_sql::DbInstances>();
-        let instances = instances.0.read().await;
-
-        let DbPool::Sqlite(pool) = instances.get(db::URL).unwrap();
-        pool.clone()
-    }
-
-    pub fn ctx(&self) -> tauri::State<'_, Context> {
-        self.handle.state::<Context>()
     }
 }

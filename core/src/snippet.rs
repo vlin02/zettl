@@ -1,14 +1,6 @@
 use sqlx::prelude::FromRow;
-use syntect::{easy::HighlightLines, html::highlighted_html_for_string};
 
-use crate::{
-    db,
-    syntax::{format_to_scope, highlight_as_html, preview_target_in_content},
-};
-
-pub async fn get_settings() {}
-
-pub async fn update_settings() {}
+use crate::{db, session::Session};
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SnippetsQuery {
@@ -36,17 +28,7 @@ fn escape_like_query(s: &str) -> String {
     escaped
 }
 
-#[tauri::command]
-pub async fn list_snippets(pool: db::Pool, query: SnippetsQuery) -> Vec<Snippet> {
-    let session = Session::new(handle);
-    let pool = session.pool().await;
-    let Session {
-        syntax_set,
-        theme_set,
-        lookup,
-        ..
-    } = &*session.ctx();
-
+pub fn get_snippets(ctx: Session, pool: &db::Pool, query: SnippetsQuery) {
     #[derive(FromRow)]
     struct Row {
         content: String,
@@ -58,11 +40,11 @@ pub async fn list_snippets(pool: db::Pool, query: SnippetsQuery) -> Vec<Snippet>
 
     let rows: Vec<Row> = sqlx::query_as(
         "
-            SELECT snippet.content, format
-            FROM snippet
-            JOIN snippet_fts ON snippet.id = snippet_fts.rowid
-            WHERE snippet_fts.content LIKE ? COLLATE NOCASE
-      ",
+          SELECT snippet.content, format
+          FROM snippet
+          JOIN snippet_fts ON snippet.id = snippet_fts.rowid
+          WHERE snippet_fts.content LIKE ? COLLATE NOCASE
+    ",
     )
     .bind(format!("%{}%", escape_like_query(&search)))
     .fetch_all(&pool)

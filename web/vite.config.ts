@@ -1,6 +1,6 @@
 import { defineConfig } from "vite"
 import { svelte } from "@sveltejs/vite-plugin-svelte"
-import path, { resolve } from "path"
+import { resolve } from "path"
 
 export default defineConfig({
   plugins: [svelte()],

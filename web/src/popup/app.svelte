@@ -32,7 +32,7 @@
     />
   </div>
   <div class="snippet-list flex overflow-y-auto flex-1 flex-col whitespace-nowrap" style="background-color: rgba(41, 41, 42, .4)">
-    {#each snippets as { content, preview_html }}
+    {#each snippets as { preview_html }}
       <div class="text-xs p-2">
         <pre>{@html preview_html}</pre>
       </div>
