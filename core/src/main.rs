@@ -9,8 +9,9 @@ use handler::list_snippets;
 use objc2_app_kit::{NSPasteboard, NSStringPboardType};
 use objc2_foundation::NSString;
 use session::Session;
-use snippet::{get_snippets, SnippetsQuery};
+use snippet::{find_snippets, SnippetsQuery};
 use sqlx::sqlite::SqlitePoolOptions;
+use syntax::highlight_lines;
 use syntect::{highlighting::ThemeSet, parsing::SyntaxSet};
 use tauri::{async_runtime::block_on, generate_handler, window::Color, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
@@ -83,35 +84,51 @@ fn main() -> Result<(), ort::Error> {
     let database_url = "sqlite:/Users/vilin/Library/Application Support/io.zettl.app/zettl.db";
 
     // Create a connection pool
-    let pool = block_on(
-        SqlitePoolOptions::new()
-            .max_connections(5) // Set the maximum number of connections
-            .connect(database_url),
-    )
-    .unwrap();
+    // let pool = block_on(
+    //     SqlitePoolOptions::new()
+    //         .max_connections(5) // Set the maximum number of connections
+    //         .connect(database_url),
+    // )
+    // .unwrap();
 
-    let session = Session {
-        ort: ort::session::Session::builder()
-            .unwrap()
-            .commit_from_memory(include_bytes!("model.onnx"))
-            .unwrap(),
-        syntax_set: SyntaxSet::load_defaults_newlines(),
-        theme_set: ThemeSet::load_defaults(),
-        lookup: lookup::Table::new(),
-        pool,
-    };
+    // let session = Session {
+    //     ort: ort::session::Session::builder()
+    //         .unwrap()
+    //         .commit_from_memory(include_bytes!("model.onnx"))
+    //         .unwrap(),
+    // syntax_set: SyntaxSet::load_defaults_newlines(),
+    // theme_set: ThemeSet::load_defaults(),
+    //     lookup: lookup::Table::new(),
+    //     pool,
+    // };
 
-    let elapsed = std::time::Instant::now();
-    // for _ in 0..100 {
-    //     get_probabilities(
-    //         &session,
-    //         "&*handle.state::<tauri_plugin_sql::DbInstances>();",
-    //     );
-    // }
+    // let q = SnippetsQuery { search: String::from("copy the") };
+    // block_on(get_snippets(&session, &q));
+    // let elapsed = std::time::Instant::now();
 
-    let q = SnippetsQuery { search: String::from("") };
-    block_on(get_snippets(&session, &q));
-    println!("Elapsed time: {:?}", elapsed.elapsed());
+    // block_on(get_snippets(&session, &q));
+    let syntax_set = SyntaxSet::load_defaults_newlines();
+    let syntax = syntax_set.find_syntax_by_extension("js").unwrap();
+
+    let theme_set = ThemeSet::load_defaults();
+
+    highlight_lines(
+        &syntax_set,
+        &syntax,
+        &theme_set.themes["base16-ocean.dark"],
+        "import { invoke } from \"@tauri-apps/api/core\"
+
+export type Snippet = {
+  content: string
+  preview_html: string
+}
+
+export async function listSnippets(query: { search: string }): Promise<Snippet[]> {
+  return invoke(\"list_snippets\", { query })
+}",
+    );
+
+    // println!("Elapsed time: {:?}", elapsed.elapsed());
 
     // let (copy_tx, copy_rx) = channel::<String>();
     // let (paste_tx, paste_rx) = channel::<String>();

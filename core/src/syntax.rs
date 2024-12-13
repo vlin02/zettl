@@ -41,40 +41,27 @@ pub fn format_to_scope(format: Format) -> parsing::Scope {
     parsing::Scope::new(str).unwrap()
 }
 
-pub fn highlight_as_html(
+pub fn highlight_lines(
     syntax_set: &SyntaxSet,
     syntax: &SyntaxReference,
     theme: &Theme,
     s: &str,
-) -> Result<String, syntect::Error> {
+) -> Result<Vec<String>, syntect::Error> {
     let mut highlighter = HighlightLines::new(syntax, theme);
-    let mut output = String::new();
+    let mut lines = Vec::new();
+
     for line in LinesWithEndings::from(s) {
         let regions = highlighter.highlight_line(line, syntax_set)?;
+
+        let mut line = String::new();
         append_highlighted_html_for_styled_line(
             &regions[..],
             syntect::html::IncludeBackground::No,
-            &mut output,
+            &mut line,
         )?;
+
+        lines.push(line);
     }
 
-    Ok(output)
-}
-
-pub fn preview_target_in_content(input: &str, target: &str, line_count: i32) -> String {
-    let mut output = String::new();
-    let mut curr_count = 0;
-
-    for line in LinesWithEndings::from(input) {
-        if curr_count > 0 || line.to_ascii_lowercase().contains(target) {
-            output += line;
-            curr_count += 1;
-        }
-
-        if curr_count == line_count {
-            break;
-        }
-    }
-
-    output
+    Ok(lines)
 }

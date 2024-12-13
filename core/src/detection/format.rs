@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug, serde::Serialize)]
 pub enum Format {
     Ai,
     Apk,
