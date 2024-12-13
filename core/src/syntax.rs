@@ -1,7 +1,7 @@
 use syntect::{
     easy::HighlightLines,
     highlighting::Theme,
-    html::{append_highlighted_html_for_styled_line, ClassStyle, ClassedHTMLGenerator},
+    html::append_highlighted_html_for_styled_line,
     parsing::{self, SyntaxReference, SyntaxSet},
     util::LinesWithEndings,
 };

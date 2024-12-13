@@ -1,7 +1,5 @@
-use std::sync::mpsc::Sender;
-
 use syntect::{highlighting::ThemeSet, parsing::SyntaxSet};
-use tauri::{AppHandle, Manager};
+use tauri::{async_runtime::block_on, AppHandle, Manager};
 use tauri_plugin_sql::DbPool;
 
 use crate::{db, lookup};
@@ -11,11 +9,10 @@ pub struct Session {
     pub syntax_set: SyntaxSet,
     pub theme_set: ThemeSet,
     pub lookup: lookup::Table,
-    pub paste_tx: Sender<String>,
     pub pool: db::Pool,
 }
 
-async fn create_pool_from_handle(handle: AppHandle) -> db::Pool {
+async fn create_pool_from_handle(handle: &AppHandle) -> db::Pool {
     let instances = &*handle.state::<tauri_plugin_sql::DbInstances>();
     let instances = instances.0.read().await;
 
@@ -25,7 +22,7 @@ async fn create_pool_from_handle(handle: AppHandle) -> db::Pool {
 }
 
 impl Session {
-    pub async fn new(handle: AppHandle, paste_tx: Sender<String>) -> Session {
+    pub fn new(handle: &AppHandle) -> Session {
         Session {
             ort: ort::session::Session::builder()
                 .unwrap()
@@ -34,8 +31,7 @@ impl Session {
             syntax_set: SyntaxSet::load_defaults_newlines(),
             theme_set: ThemeSet::load_defaults(),
             lookup: lookup::Table::new(),
-            pool: create_pool_from_handle(handle).await,
-            paste_tx,
+            pool: block_on(create_pool_from_handle(handle)),
         }
     }
 }

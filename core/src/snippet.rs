@@ -1,6 +1,9 @@
-use sqlx::prelude::FromRow;
+use crate::{
+    session::Session,
+    syntax::{format_to_scope, highlight_as_html, preview_target_in_content},
+};
 
-use crate::{db, session::Session};
+use sqlx::prelude::FromRow;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct SnippetsQuery {
@@ -28,12 +31,20 @@ fn escape_like_query(s: &str) -> String {
     escaped
 }
 
-pub fn get_snippets(ctx: Session, pool: &db::Pool, query: SnippetsQuery) {
+pub async fn get_snippets(session: &Session, query: &SnippetsQuery) -> Vec<Snippet> {
     #[derive(FromRow)]
     struct Row {
         content: String,
         format: String,
     }
+
+    let Session {
+        pool,
+        lookup,
+        theme_set,
+        syntax_set,
+        ..
+    } = session;
 
     let SnippetsQuery { search } = query;
     let search = search.to_ascii_lowercase();
@@ -44,10 +55,11 @@ pub fn get_snippets(ctx: Session, pool: &db::Pool, query: SnippetsQuery) {
           FROM snippet
           JOIN snippet_fts ON snippet.id = snippet_fts.rowid
           WHERE snippet_fts.content LIKE ? COLLATE NOCASE
+          ORDER BY snippet.id DESC
     ",
     )
     .bind(format!("%{}%", escape_like_query(&search)))
-    .fetch_all(&pool)
+    .fetch_all(pool)
     .await
     .unwrap();
 
@@ -64,9 +76,7 @@ pub fn get_snippets(ctx: Session, pool: &db::Pool, query: SnippetsQuery) {
             let preview = preview_target_in_content(&content, &search, PREVIEW_LINE_COUNT);
             let syntax = syntax_set.find_syntax_by_scope(scope).unwrap();
             let theme = &theme_set.themes["base16-ocean.dark"];
-            let preview_html = highlight_as_html(&syntax_set, &syntax, theme, &preview).unwrap();
-
-            println!("{}", content);
+            let preview_html = highlight_as_html(syntax_set, syntax, theme, &preview).unwrap();
 
             Snippet {
                 content,
