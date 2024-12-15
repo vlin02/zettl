@@ -1,8 +1,9 @@
 <script lang="ts">
   import { listSnippets, type Snippet } from "../api"
   import { Search } from "lucide-svelte"
+  import { onMount } from "svelte"
 
-  const PAGE_SIZE = 10
+  const PAGE_SIZE = 50
   const MIN_SCROLL_REMAINING_PX = 1000
 
   type List = {
@@ -15,7 +16,9 @@
 
   let inputRef: HTMLInputElement
   let listRef: HTMLDivElement
-  let itemRefs: HTMLDivElement[] = []
+  let itemRefs: HTMLDivElement[] = $state([])
+
+  let activeKeys: string[] = $state([])
 
   let list: List = $state({
     search: "",
@@ -24,14 +27,15 @@
     activeIndex: 0,
     initialized: false
   })
-  let pageLock: AbortController | null = null
+  let pageLock: AbortController | null = $state.raw(null)
 
   const maybeLoadNextPage = async () => {
     const { search, nextId, initialized } = list
-
-    if (!initialized) {
-      if (!pageLock?.signal.aborted) return
+    if (initialized) {
+      if (pageLock && !pageLock.signal.aborted) return
       if (nextId === null) return
+    } else {
+      pageLock?.abort()
     }
 
     pageLock = new AbortController()
@@ -45,87 +49,63 @@
 
     if (signal.aborted) return
 
+    if (!initialized) {
+      list.snippets = []
+      list.activeIndex = 0
+    }
     list.nextId = page.nextId
     list.snippets.push(...page.snippets)
+    list.initialized = true
+
+    pageLock = null
+  }
+
+  function jsonEq(a: any, b: any) {
+    return JSON.stringify(a) === JSON.stringify(b)
   }
 
   const getRemainingScrollPx = ({ scrollHeight, scrollTop, clientHeight }: HTMLElement) => {
     return scrollHeight - scrollTop - clientHeight
   }
 
-  const setActiveIndex = (index: number) => {
+  const setActiveIndex = $derived((index: number) => {
     list.activeIndex = index
-    itemRefs[index].scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" })
-  }
+    itemRefs[index].scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" })
+  })
 
   $effect(() => {
     inputRef.focus()
+  })
 
-    maybeLoadNextPage()
-
-    listRef.addEventListener("scroll", async () => {
+  $effect(() => {
+    const onScroll = async () => {
       const remainingPx = getRemainingScrollPx(listRef)
       if (MIN_SCROLL_REMAINING_PX <= remainingPx) return
-
       maybeLoadNextPage()
-    })
+    }
+
+    listRef.addEventListener("scroll", onScroll)
+    ;() => {
+      listRef.removeEventListener("scroll", onScroll)
+    }
+  })
+
+  onMount(() => {
+    maybeLoadNextPage()
   })
 </script>
 
-<div class="flex flex-col h-screen">
-  <div class="flex items-center h-8 px-2 gap-2" style="background-color: rgba(41, 41, 42, .6)">
-    <Search class="text-white opacity-50 " size={15} />
-    <input
-      bind:this={inputRef}
-      class="font-mono bg-transparent text-white placeholder-gray-400 focus:outline-none flex-grow text-sm"
-      type="text"
-      placeholder="search code"
-      spellCheck={false}
-      autoComplete="off"
-      autoCorrect="off"
-      autocapitalize="off"
-      autocomplete="off"
-      value={list.search}
-      oninput={async (event) => {
-        const { value } = event.currentTarget
-
-        list = {
-          search: value,
-          nextId: null,
-          snippets: [],
-          activeIndex: 0,
-          initialized: false
-        }
-
-        maybeLoadNextPage()
-      }}
-    />
-  </div>
-  <div
-    class="snippet-list flex overflow-y-auto flex-1 flex-col whitespace-nowrap"
-    style="background-color: rgba(41, 41, 42, .4)"
-    bind:this={listRef}
-  >
-    {#if list}
-      {#each list.snippets as { preview_html }, i}
-        <div
-          bind:this={itemRefs[i]}
-          class={`text-xs p-2 ${i === list.activeIndex && "bg-white/10"} hover:bg-white/5`}
-          role="none"
-          onclick={() => {}}
-        >
-          <pre>{@html preview_html}</pre>
-        </div>
-        <div class="border-t border-white/15"></div>
-      {/each}
-    {/if}
-  </div>
-</div>
-
 <svelte:window
-  on:keydown={({ key }) => {
-    if (!list) return
+  onkeydown={({ key, repeat }) => {
     const { activeIndex, snippets } = list
+
+    if (!repeat) {
+      activeKeys.push(key)
+    }
+
+    if (jsonEq(activeKeys, ["Meta", "l"])) {
+      inputRef.focus()
+    }
 
     switch (key) {
       case "ArrowUp": {
@@ -138,11 +118,54 @@
         setActiveIndex(i)
         break
       }
-      case "ArrowRight":
-        console.log("right")
     }
   }}
+  onkeyup={({ key }) => {
+    activeKeys = activeKeys.filter((x) => x !== key)
+  }}
 />
+
+<div class="flex h-screen flex-col">
+  <div class="bg-primary/60 flex h-8 items-center gap-2 px-2">
+    <Search class="text-white/50 " size={15} />
+    <input
+      bind:this={inputRef}
+      class="flex-grow bg-transparent font-mono text-sm text-white placeholder-white/50 focus:outline-none"
+      type="text"
+      placeholder="search code"
+      spellCheck={false}
+      autoComplete="off"
+      autoCorrect="off"
+      autocapitalize="off"
+      autocomplete="off"
+      value={list.search}
+      oninput={({ currentTarget: { value } }) => {
+        list.search = value
+        list.initialized = false
+
+        maybeLoadNextPage()
+      }}
+    />
+  </div>
+  <div
+    class="snippet-list bg-primary/40 flex flex-1 flex-col overflow-y-auto whitespace-nowrap"
+    bind:this={listRef}
+  >
+    {#each list.snippets as { previewHtml }, i}
+      <div
+        bind:this={itemRefs[i]}
+        class={`cursor-pointer p-2 text-xs ${i === list.activeIndex && "bg-white/10"} hover:bg-white/5`}
+        role="none"
+        onclick={() => {
+          setActiveIndex(i)
+        }}
+      >
+        <pre>{@html previewHtml}</pre>
+      </div>
+      <div class="border-t border-white/15"></div>
+    {/each}
+  </div>
+</div>
 
 <style>
   .snippet-list {

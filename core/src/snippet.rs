@@ -1,5 +1,3 @@
-use std::f32::MAX_10_EXP;
-
 use crate::{
     detection::{format::Format, infer_format},
     session::Session,
@@ -40,7 +38,7 @@ const PREVIEW_LINE_COUNT: usize = 5;
 #[derive(serde::Deserialize)]
 pub struct SnippetsQuery {
     pub search: String,
-    pub next_id: Option<i32>,
+    pub start_id: Option<i32>,
     pub limit: i32,
 }
 
@@ -93,7 +91,7 @@ pub async fn find_snippets(session: &Session, query: &SnippetsQuery) -> SnippetP
 
     let SnippetsQuery {
         search,
-        next_id,
+        start_id: next_id,
         limit,
     } = query;
     let search = search.to_ascii_lowercase();
