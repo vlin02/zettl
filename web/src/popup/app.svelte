@@ -106,17 +106,24 @@
       activeKeys.push(key)
     }
 
+    console.log(activeKeys)
+
+    
+
     switch (activeKeys.join("+")) {
       case "Meta+l":
         inputRef.focus()
-        break
+        return
       case "Enter":
         const snippet = snippets[activeIndex]
-        if (!snippet) break
+        if (!snippet) return
 
         await copySnippet(snippet.id)
         await closeWindow()
-        break
+        return
+    }
+
+    switch (key) {
       case "ArrowUp": {
         const i = Math.max(activeIndex - 1, 0)
         selectIndex(i)

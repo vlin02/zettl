@@ -7,7 +7,7 @@ use std::{
 use crate::{
     clipboard::Clipboard,
     db,
-    handler::{copy_snippet, list_snippets},
+    handler::{copy_snippet, list_snippets, close_window},
     snippet::insert_snippet,
 };
 use objc2_app_kit::{NSPasteboard, NSStringPboardType};
@@ -186,7 +186,7 @@ pub fn start() {
 
             Ok(())
         })
-        .invoke_handler(generate_handler![list_snippets, copy_snippet])
+        .invoke_handler(generate_handler![list_snippets, copy_snippet, close_window])
         .on_window_event(|window, event| {
             if window.label() == "popover" {
                 match event {

@@ -25,6 +25,7 @@ pub async fn copy_snippet(handle: AppHandle, id: i32) {
     paste_tx.send(content).unwrap();
 }
 
+#[tauri::command]
 pub async fn close_window(window: tauri::WebviewWindow) {
-    window.close().unwrap();
+    window.hide().unwrap();
 }
