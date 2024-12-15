@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::detection::format::{Format, FORMATS};
 
-pub struct Table {
+pub struct LookupTable {
     pub frequency: HashMap<Format, f32>,
     pub format_by_key: HashMap<String, Format>,
 }
@@ -27,8 +27,8 @@ fn so_frequency(format: Format) -> f32 {
     }
 }
 
-impl Table {
-    pub fn new() -> Table {
+impl LookupTable {
+    pub fn new() -> LookupTable {
         let total_freq: f32 = [
             Format::JavaScript,
             Format::Html,
@@ -71,7 +71,7 @@ impl Table {
             format_by_key.insert(format.key().to_string(), format);
         }
         
-        Table {
+        LookupTable {
             frequency,
             format_by_key,
         }

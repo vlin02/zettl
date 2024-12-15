@@ -8,7 +8,7 @@ pub struct Session {
     pub ort: ort::session::Session,
     pub syntax_set: SyntaxSet,
     pub theme_set: ThemeSet,
-    pub lookup: lookup::Table,
+    pub lookup: lookup::LookupTable,
     pub pool: db::Pool,
 }
 
@@ -22,7 +22,7 @@ async fn create_pool_from_handle(handle: &AppHandle) -> db::Pool {
 }
 
 impl Session {
-    pub fn new(handle: &AppHandle) -> Session {
+    pub fn from_handle(handle: &AppHandle) -> Session {
         Session {
             ort: ort::session::Session::builder()
                 .unwrap()
@@ -30,7 +30,7 @@ impl Session {
                 .unwrap(),
             syntax_set: SyntaxSet::load_defaults_newlines(),
             theme_set: ThemeSet::load_defaults(),
-            lookup: lookup::Table::new(),
+            lookup: lookup::LookupTable::new(),
             pool: block_on(create_pool_from_handle(handle)),
         }
     }

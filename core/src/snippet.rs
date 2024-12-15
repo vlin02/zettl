@@ -1,3 +1,5 @@
+use std::f32::MAX_10_EXP;
+
 use crate::{
     detection::{format::Format, infer_format},
     session::Session,
@@ -22,11 +24,12 @@ pub async fn insert_snippet(session: &Session, content: &str) {
     let theme = &theme_set.themes["base16-ocean.dark"];
 
     let lines = highlight_lines(syntax_set, syntax, theme, content).unwrap();
+    let lines = &serde_json::to_string(&lines).unwrap();
 
-    sqlx::query("INSERT INTO snippet (content, format, lines) VALUES (?, ?)")
+    sqlx::query("INSERT INTO snippet (content, format, lines) VALUES (?, ?, jsonb(?))")
         .bind(content)
         .bind(format.key())
-        .bind(&serde_json::to_string(&lines).unwrap())
+        .bind(lines)
         .execute(pool)
         .await
         .unwrap();
@@ -34,16 +37,24 @@ pub async fn insert_snippet(session: &Session, content: &str) {
 
 const PREVIEW_LINE_COUNT: usize = 5;
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(serde::Deserialize)]
 pub struct SnippetsQuery {
     pub search: String,
+    pub next_id: Option<i32>,
+    pub limit: i32,
 }
 
-#[derive(serde::Serialize)]
+#[derive(Debug, serde::Serialize)]
 pub struct Snippet {
     pub id: i32,
     pub format: Format,
     pub preview_html: String,
+}
+
+#[derive(Debug, serde::Serialize)]
+pub struct SnippetPage {
+    pub snippets: Vec<Snippet>,
+    pub next_id: Option<i32>,
 }
 
 fn escape_like_query(s: &str) -> String {
@@ -69,7 +80,7 @@ fn find_target_line_index(input: &str, target: &str) -> usize {
     panic!()
 }
 
-pub async fn find_snippets(session: &Session, query: &SnippetsQuery) -> Vec<Snippet> {
+pub async fn find_snippets(session: &Session, query: &SnippetsQuery) -> SnippetPage {
     #[derive(FromRow)]
     struct Row {
         id: i32,
@@ -80,24 +91,48 @@ pub async fn find_snippets(session: &Session, query: &SnippetsQuery) -> Vec<Snip
 
     let Session { pool, lookup, .. } = session;
 
-    let SnippetsQuery { search } = query;
+    let SnippetsQuery {
+        search,
+        next_id,
+        limit,
+    } = query;
     let search = search.to_ascii_lowercase();
 
     let rows: Vec<Row> = sqlx::query_as(
         "
-          SELECT snippet.id, content, format, lines
-          FROM snippet
-          JOIN snippet_fts ON snippet.id = snippet_fts.rowid
-          WHERE snippet_fts.content LIKE ? COLLATE NOCASE
-          ORDER BY snippet.id DESC
-    ",
+SELECT
+  snippet.id,
+  snippet.content,
+  snippet.format,
+  json (snippet.lines) as lines
+FROM
+  snippet
+  JOIN snippet_fts ON snippet.id = snippet_fts.rowid
+WHERE
+  (
+    ?
+    OR snippet_fts.rowid <= ?
+  )
+  AND snippet_fts.content LIKE ? COLLATE NOCASE ESCAPE '\\'
+ORDER BY
+  snippet.id DESC
+LIMIT
+  ?
+        ",
     )
+    .bind(next_id.is_none())
+    .bind(next_id.unwrap_or(0))
     .bind(format!("%{}%", escape_like_query(&search)))
+    .bind(limit + 1)
     .fetch_all(pool)
     .await
     .unwrap();
 
-    rows.iter()
+    let limit = *limit as usize;
+    let next_id = rows.get(limit).map(|x| x.id);
+
+    let snippets: Vec<Snippet> = rows[..limit.min(rows.len())]
+        .iter()
         .map(|row| {
             let Row {
                 id,
@@ -116,5 +151,7 @@ pub async fn find_snippets(session: &Session, query: &SnippetsQuery) -> Vec<Snip
                     .join(""),
             }
         })
-        .collect()
+        .collect();
+
+    return SnippetPage { next_id, snippets };
 }

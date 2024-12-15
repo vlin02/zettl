@@ -37,7 +37,7 @@ pub fn get_probabilities(ort: &Session, content: &str) -> Vec<f32> {
 
 const FREQUENCY_WEIGHT: f32 = 0.05;
 
-fn apply_bayes(lookup: &lookup::Table, probabilities: &[f32]) -> Vec<f32> {
+fn apply_bayes(lookup: &lookup::LookupTable, probabilities: &[f32]) -> Vec<f32> {
     let vals: Vec<f32> = (0..probabilities.len())
         .map(|i| {
             let format = FORMATS[i];
@@ -51,7 +51,7 @@ fn apply_bayes(lookup: &lookup::Table, probabilities: &[f32]) -> Vec<f32> {
     vals.iter().map(|x| x / tot).collect()
 }
 
-pub fn infer_format(ort: &Session, lookup: &lookup::Table, content: &str) -> Format {
+pub fn infer_format(ort: &Session, lookup: &lookup::LookupTable, content: &str) -> Format {
     let ps = get_probabilities(ort, content);
     let ps = apply_bayes(&lookup, &ps);
 

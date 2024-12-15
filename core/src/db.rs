@@ -15,7 +15,7 @@ CREATE TABLE
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT,
     format TEXT,
-    
+    lines BLOB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
