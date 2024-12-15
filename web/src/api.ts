@@ -1,13 +1,13 @@
 import { invoke } from "@tauri-apps/api/core"
 
 export type SnippetData = {
-  id: string
+  id: number
   start: number
   preview_html: string
 }
 
 export type Snippet = {
-  id: string
+  id: number
   start: number
   previewHtml: string
 }
@@ -41,4 +41,12 @@ export async function listSnippets({
     }),
     nextId: next_id
   }
+}
+
+export async function copySnippet(id: number) {
+  await invoke("copy_snippet", { id })
+}
+
+export async function closeWindow() {
+  await invoke("close_window")
 }

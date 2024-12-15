@@ -4,15 +4,26 @@ use std::{
     time::Duration,
 };
 
-use crate::{db, handler::list_snippets, session::Session, snippet::insert_snippet};
+use crate::{
+    clipboard::Clipboard,
+    db,
+    handler::{copy_snippet, list_snippets},
+    snippet::insert_snippet,
+};
 use objc2_app_kit::{NSPasteboard, NSStringPboardType};
 use objc2_foundation::NSString;
 
-use tauri::{generate_handler, AppHandle, Manager, WebviewWindow};
+use tauri::{
+    async_runtime::block_on, generate_handler, AppHandle, Emitter, Manager, WebviewWindow,
+};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_sql::DbPool;
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 
 const PASTEBOARD_POLL_MS: u64 = 100;
+const SHOW_WINDOW_DELAY_MS: u64 = 10;
+
+pub struct PasteTx(pub Sender<String>);
 
 fn monitor_pasteboard(pasteboard: &NSPasteboard, copy_tx: &Sender<String>) {
     let mut cnt = unsafe { pasteboard.changeCount() };
@@ -36,13 +47,16 @@ fn monitor_pasteboard(pasteboard: &NSPasteboard, copy_tx: &Sender<String>) {
 
 fn paste_content(pasteboard: &NSPasteboard, content: &str) {
     let content = NSString::from_str(&content);
-    unsafe { pasteboard.setString_forType(&content, NSStringPboardType) };
+    unsafe {
+        pasteboard.clearContents();
+        pasteboard.setString_forType(&content, NSStringPboardType);
+    };
 }
 
 fn render_popup(handle: &AppHandle) -> WebviewWindow {
     let window = tauri::WebviewWindowBuilder::new(
         handle,
-        "popover",
+        "popup",
         tauri::WebviewUrl::App("src/popup/index.html".into()),
     )
     .title("Zettl")
@@ -69,6 +83,15 @@ fn render_settings(handle: &AppHandle) -> WebviewWindow {
     .visible(false)
     .build()
     .unwrap()
+}
+
+async fn create_pool_from_handle(handle: &AppHandle) -> db::Pool {
+    let instances = &*handle.state::<tauri_plugin_sql::DbInstances>();
+    let instances = instances.0.read().await;
+
+    let DbPool::Sqlite(pool) = instances.get(db::URL).unwrap();
+
+    pool.clone()
 }
 
 pub fn start() {
@@ -102,14 +125,18 @@ pub fn start() {
             let base_handle = app.handle();
 
             let handle = base_handle.clone();
-            handle.manage(Session::from_handle(&handle));
+            let pool = block_on(create_pool_from_handle(&handle));
+
+            handle.manage(Clipboard::new(pool));
+            handle.manage(PasteTx(paste_tx));
+
             handle.plugin(tauri_plugin_positioner::init())?;
 
             let alt_p = Shortcut::new(Some(Modifiers::ALT), Code::KeyP);
             let esc = Shortcut::new(None, Code::Escape);
 
-            let popup = render_popup(&handle);
-            // let settings = render_settings(&handle);
+            render_popup(&handle);
+            let settings = render_settings(&handle);
 
             handle.plugin(
                 tauri_plugin_global_shortcut::Builder::new()
@@ -119,12 +146,17 @@ pub fn start() {
                         }
 
                         if shortcut == &alt_p {
-                            let popup = popup.clone();
+                            let popup = if let Some(window) = handle.get_webview_window("popup") {
+                                window
+                            } else {
+                                render_popup(handle)
+                            };
+
                             let pos = handle.cursor_position().unwrap();
 
                             thread::spawn(move || {
                                 popup.set_position(pos).unwrap();
-                                thread::sleep(Duration::from_millis(PASTEBOARD_POLL_MS));
+                                thread::sleep(Duration::from_millis(SHOW_WINDOW_DELAY_MS));
                                 popup.show().unwrap();
                                 popup.set_focus().unwrap();
                             });
@@ -144,16 +176,17 @@ pub fn start() {
 
             // let handle = base_handle.clone();
             tauri::async_runtime::spawn(async move {
-                let session = &*handle.state::<Session>();
+                let session = &*handle.state::<Clipboard>();
 
                 for content in copy_rx {
                     insert_snippet(&session, &content).await;
+                    handle.emit("content-copied", content).unwrap()
                 }
             });
 
             Ok(())
         })
-        .invoke_handler(generate_handler![list_snippets])
+        .invoke_handler(generate_handler![list_snippets, copy_snippet])
         .on_window_event(|window, event| {
             if window.label() == "popover" {
                 match event {

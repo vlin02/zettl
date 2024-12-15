@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { listSnippets, type Snippet } from "../api"
+  import { listen } from "@tauri-apps/api/event"
+  import { closeWindow, copySnippet, listSnippets, type Snippet } from "../api"
   import { Search } from "lucide-svelte"
-  import { onMount } from "svelte"
+  import { untrack } from "svelte"
 
   const PAGE_SIZE = 50
   const MIN_SCROLL_REMAINING_PX = 1000
@@ -11,7 +12,13 @@
     snippets: Snippet[]
     nextId: number | null
     activeIndex: number
-    initialized: boolean
+  }
+
+  const initialList: List = {
+    search: "",
+    snippets: [],
+    nextId: null,
+    activeIndex: 0
   }
 
   let inputRef: HTMLInputElement
@@ -20,55 +27,44 @@
 
   let activeKeys: string[] = $state([])
 
-  let list: List = $state({
-    search: "",
-    snippets: [],
-    nextId: null,
-    activeIndex: 0,
-    initialized: false
-  })
+  let list: List = $state(initialList)
   let pageLock: AbortController | null = $state.raw(null)
 
-  const maybeLoadNextPage = async () => {
-    const { search, nextId, initialized } = list
-    if (initialized) {
-      if (pageLock && !pageLock.signal.aborted) return
-      if (nextId === null) return
-    } else {
+  const maybeLoadNextPage = async (search?: string) => {
+    if (search !== undefined) {
       pageLock?.abort()
+      list.search = search
+    } else {
+      if (pageLock && !pageLock.signal.aborted) return
+      if (list.nextId === null) return
     }
 
     pageLock = new AbortController()
     const { signal } = pageLock
 
     const page = await listSnippets({
-      search,
-      startId: nextId,
+      search: search ?? list.search,
+      startId: search !== undefined ? null : list.nextId,
       limit: PAGE_SIZE
     })
 
     if (signal.aborted) return
 
-    if (!initialized) {
+    if (search !== undefined) {
       list.snippets = []
       list.activeIndex = 0
     }
     list.nextId = page.nextId
     list.snippets.push(...page.snippets)
-    list.initialized = true
 
     pageLock = null
-  }
-
-  function jsonEq(a: any, b: any) {
-    return JSON.stringify(a) === JSON.stringify(b)
   }
 
   const getRemainingScrollPx = ({ scrollHeight, scrollTop, clientHeight }: HTMLElement) => {
     return scrollHeight - scrollTop - clientHeight
   }
 
-  const setActiveIndex = $derived((index: number) => {
+  const selectIndex = $derived((index: number) => {
     list.activeIndex = index
     itemRefs[index].scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" })
   })
@@ -85,37 +81,50 @@
     }
 
     listRef.addEventListener("scroll", onScroll)
-    ;() => {
+
+    return () => {
       listRef.removeEventListener("scroll", onScroll)
     }
   })
 
-  onMount(() => {
-    maybeLoadNextPage()
+  $effect(() => {
+    untrack(() => maybeLoadNextPage(""))
+  })
+
+  $effect(() => {
+    listen<string>("content-copied", () => {
+      maybeLoadNextPage("")
+    })
   })
 </script>
 
 <svelte:window
-  onkeydown={({ key, repeat }) => {
+  onkeydown={async ({ key, repeat }) => {
     const { activeIndex, snippets } = list
 
     if (!repeat) {
       activeKeys.push(key)
     }
 
-    if (jsonEq(activeKeys, ["Meta", "l"])) {
-      inputRef.focus()
-    }
+    switch (activeKeys.join("+")) {
+      case "Meta+l":
+        inputRef.focus()
+        break
+      case "Enter":
+        const snippet = snippets[activeIndex]
+        if (!snippet) break
 
-    switch (key) {
+        await copySnippet(snippet.id)
+        await closeWindow()
+        break
       case "ArrowUp": {
         const i = Math.max(activeIndex - 1, 0)
-        setActiveIndex(i)
+        selectIndex(i)
         break
       }
       case "ArrowDown": {
         const i = Math.min(activeIndex + 1, snippets.length - 1)
-        setActiveIndex(i)
+        selectIndex(i)
         break
       }
     }
@@ -140,10 +149,7 @@
       autocomplete="off"
       value={list.search}
       oninput={({ currentTarget: { value } }) => {
-        list.search = value
-        list.initialized = false
-
-        maybeLoadNextPage()
+        maybeLoadNextPage(value)
       }}
     />
   </div>
@@ -157,7 +163,7 @@
         class={`cursor-pointer p-2 text-xs ${i === list.activeIndex && "bg-white/10"} hover:bg-white/5`}
         role="none"
         onclick={() => {
-          setActiveIndex(i)
+          selectIndex(i)
         }}
       >
         <pre>{@html previewHtml}</pre>

@@ -10,7 +10,16 @@
     }
   },
   "app": {
-    "macOSPrivateApi": true
+    "macOSPrivateApi": true,
+    "security": {
+      "capabilities": [
+        {
+          "identifier": "popup",
+          "windows": ["popup"],
+          "permissions": ["core:event:allow-listen"]
+        }
+      ]
+    }
   },
   "bundle": {
     "active": true,

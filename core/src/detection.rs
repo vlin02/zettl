@@ -1,5 +1,5 @@
-use format::{Format, FORMATS};
 use features::extract_features;
+use format::{Format, FORMATS};
 use ndarray::{Array2, ArrayViewD};
 
 use config::ModelConfig;
@@ -8,8 +8,8 @@ use ort::{inputs, session::Session};
 use crate::lookup;
 
 mod config;
-pub mod format;
 mod features;
+pub mod format;
 
 const CONFIG: ModelConfig = ModelConfig {
     beg_size: 512,

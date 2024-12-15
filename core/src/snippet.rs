@@ -1,13 +1,14 @@
 use crate::{
+    clipboard::Clipboard,
+    db,
     detection::{format::Format, infer_format},
-    session::Session,
     syntax::{format_to_scope, highlight_lines},
 };
 
 use sqlx::prelude::FromRow;
 
-pub async fn insert_snippet(session: &Session, content: &str) {
-    let Session {
+pub async fn insert_snippet(session: &Clipboard, content: &str) {
+    let Clipboard {
         ort,
         lookup,
         pool,
@@ -78,7 +79,7 @@ fn find_target_line_index(input: &str, target: &str) -> usize {
     panic!()
 }
 
-pub async fn find_snippets(session: &Session, query: &SnippetsQuery) -> SnippetPage {
+pub async fn find_snippets(session: &Clipboard, query: &SnippetsQuery) -> SnippetPage {
     #[derive(FromRow)]
     struct Row {
         id: i32,
@@ -87,7 +88,7 @@ pub async fn find_snippets(session: &Session, query: &SnippetsQuery) -> SnippetP
         lines: String,
     }
 
-    let Session { pool, lookup, .. } = session;
+    let Clipboard { pool, lookup, .. } = session;
 
     let SnippetsQuery {
         search,
@@ -152,4 +153,29 @@ LIMIT
         .collect();
 
     return SnippetPage { next_id, snippets };
+}
+
+pub async fn get_content(pool: &db::Pool, id: i32) -> String {
+    #[derive(FromRow)]
+    struct Row {
+        content: String,
+    }
+
+    let row: Row = sqlx::query_as(
+        "
+SELECT
+  snippet.content
+FROM
+  snippet
+WHERE
+  snippet.id = ?
+    ",
+    )
+    .bind(id)
+    .fetch_one(pool)
+    .await
+    .unwrap();
+
+    let Row { content } = row;
+    content
 }
