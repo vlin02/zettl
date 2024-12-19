@@ -106,10 +106,6 @@
       activeKeys.push(key)
     }
 
-    console.log(activeKeys)
-
-    
-
     switch (activeKeys.join("+")) {
       case "Meta+l":
         inputRef.focus()

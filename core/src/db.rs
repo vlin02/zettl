@@ -30,6 +30,24 @@ CREATE TRIGGER trigger_delete_snippet AFTER DELETE ON snippet
 BEGIN
     DELETE FROM snippet_fts WHERE rowid = old.id;
 END;
+
+CREATE TABLE
+  theme (
+    name TEXT,
+    is_dark BOOL,
+    dump BLOB,
+    is_default BOOL
+  );
+
+CREATE TABLE
+  user (
+    popup_width INTEGER,
+    popup_height INTEGER,
+    poll_interval INTEGER,
+    crop_whitespace BOOL,
+    theme_id INTEGER,
+    FOREIGN KEY (theme_id) REFERENCES theme (id)
+  );
 ",
         kind: MigrationKind::Up,
     }]

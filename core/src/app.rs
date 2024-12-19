@@ -7,8 +7,12 @@ use std::{
 use crate::{
     clipboard::Clipboard,
     db,
-    handler::{copy_snippet, list_snippets, close_window},
+    handler::{
+        close_window, copy_snippet, delete_theme, get_user, import_theme, list_snippets,
+        list_themes, load_current_theme, preview_theme, update_user,
+    },
     snippet::insert_snippet,
+    user::initialize,
 };
 use objc2_app_kit::{NSPasteboard, NSStringPboardType};
 use objc2_foundation::NSString;
@@ -98,21 +102,17 @@ pub fn start() {
     let (copy_tx, copy_rx) = channel::<String>();
     let (paste_tx, paste_rx) = channel::<String>();
 
+    thread::spawn(move || {
+        let general = unsafe { NSPasteboard::generalPasteboard() };
+        monitor_pasteboard(&*general, &copy_tx);
+    });
+
     thread::spawn(|| {
-        thread::scope(|s| {
-            s.spawn(move || {
-                let general = unsafe { NSPasteboard::generalPasteboard() };
-                monitor_pasteboard(&*general, &copy_tx);
-            });
+        let general = unsafe { NSPasteboard::generalPasteboard() };
 
-            s.spawn(|| {
-                let general = unsafe { NSPasteboard::generalPasteboard() };
-
-                for content in paste_rx {
-                    paste_content(&general, &content);
-                }
-            });
-        });
+        for content in paste_rx {
+            paste_content(&general, &content);
+        }
     });
 
     tauri::Builder::default()
@@ -130,13 +130,18 @@ pub fn start() {
             handle.manage(Clipboard::new(pool));
             handle.manage(PasteTx(paste_tx));
 
-            handle.plugin(tauri_plugin_positioner::init())?;
+            tauri::async_runtime::block_on(async {
+                let clipboard = &*handle.state::<Clipboard>();
+                initialize(&clipboard).await
+            });
+
+            handle.plugin(tauri_plugin_positioner::init()).unwrap();
+
+            // render_popup(&handle);
+            // render_settings(&handle);
 
             let alt_p = Shortcut::new(Some(Modifiers::ALT), Code::KeyP);
             let esc = Shortcut::new(None, Code::Escape);
-
-            render_popup(&handle);
-            let settings = render_settings(&handle);
 
             handle.plugin(
                 tauri_plugin_global_shortcut::Builder::new()
@@ -174,19 +179,28 @@ pub fn start() {
             handle.global_shortcut().register(alt_p)?;
             handle.global_shortcut().register(esc)?;
 
-            // let handle = base_handle.clone();
             tauri::async_runtime::spawn(async move {
-                let session = &*handle.state::<Clipboard>();
-
+                let clipboard = &*handle.state::<Clipboard>();
                 for content in copy_rx {
-                    insert_snippet(&session, &content).await;
+                    insert_snippet(&clipboard, &content).await;
                     handle.emit("content-copied", content).unwrap()
                 }
             });
 
             Ok(())
         })
-        .invoke_handler(generate_handler![list_snippets, copy_snippet, close_window])
+        .invoke_handler(generate_handler![
+            get_user,
+            update_user,
+            load_current_theme,
+            list_themes,
+            preview_theme,
+            import_theme,
+            delete_theme,
+            list_snippets,
+            copy_snippet,
+            close_window
+        ])
         .on_window_event(|window, event| {
             if window.label() == "popover" {
                 match event {
