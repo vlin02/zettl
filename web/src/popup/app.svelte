@@ -160,7 +160,7 @@
     class="snippet-list bg-primary/40 flex flex-1 flex-col overflow-y-auto whitespace-nowrap"
     bind:this={listRef}
   >
-    {#each list.snippets as { previewHtml }, i}
+    {#each list.snippets as { preview_html }, i}
       <div
         bind:this={itemRefs[i]}
         class={`cursor-pointer p-2 text-xs ${i === list.activeIndex && "bg-white/10"} hover:bg-white/5`}
@@ -169,7 +169,7 @@
           selectIndex(i)
         }}
       >
-        <pre>{@html previewHtml}</pre>
+        <pre>{@html preview_html}</pre>
       </div>
       <div class="border-t border-white/15"></div>
     {/each}

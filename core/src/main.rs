@@ -8,8 +8,11 @@ pub mod lookup;
 pub mod clipboard;
 pub mod snippet;
 pub mod syntax;
-pub mod user;
+pub mod profile;
 pub mod theme;
+pub mod event;
+pub mod settings;
+pub mod shortcuts;
 mod app;
 
 fn main() {

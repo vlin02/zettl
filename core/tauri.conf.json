@@ -17,6 +17,12 @@
           "identifier": "popup",
           "windows": ["popup"],
           "permissions": ["core:event:allow-listen"]
+        },
+
+        {
+          "identifier": "settings",
+          "windows": ["settings"],
+          "permissions": ["core:event:allow-listen"]
         }
       ]
     }

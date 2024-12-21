@@ -1,12 +1,13 @@
 use std::{io::Cursor, str::FromStr};
 
-use crate::db;
+use crate::{db, profile::{self, Profile}};
 use sqlx::FromRow;
 use syntect::{
     dumps::{dump_binary, from_binary},
     highlighting::{Color, Theme, ThemeItem, ThemeSet},
     html::{css_for_theme_with_class_style, ClassStyle},
     parsing::{MatchPower, ScopeStack},
+    LoadingError,
 };
 
 const PREVIEW_SCOPES: [&str; 5] = [
@@ -54,17 +55,7 @@ fn get_preview_colors(theme: &Theme) -> Vec<Color> {
     colors
 }
 
-pub type ThemePreview = Vec<Color>;
-
-pub fn preview_theme(tm_plist: &str) -> Option<ThemePreview> {
-    let mut cursor = Cursor::new(tm_plist.as_bytes());
-
-    if let Ok(theme) = ThemeSet::load_from_reader(&mut cursor) {
-        return Some(get_preview_colors(&theme));
-    }
-
-    None
-}
+pub type Preview = Vec<Color>;
 
 const DEFAULT_THEMES: [(&str, &str); 7] = [
     ("one-dark", "One Dark"),
@@ -76,7 +67,7 @@ const DEFAULT_THEMES: [(&str, &str); 7] = [
     ("solarized-light", "Solarized Light"),
 ];
 
-pub async fn populate_default_themes(pool: &db::Pool) -> i32 {
+pub async fn populate_defaults(pool: &db::Pool) -> i32 {
     let ThemeSet { themes } = from_binary(include_bytes!("./data/default.themedump"));
 
     #[derive(FromRow)]
@@ -112,7 +103,7 @@ VALUES
     default_id.unwrap()
 }
 
-pub async fn load_theme_styles(pool: &db::Pool, id: i32) -> String {
+pub async fn load_theme_css(pool: &db::Pool, id: i32) -> String {
     #[derive(FromRow)]
     struct Row {
         dump: Vec<u8>,
@@ -129,14 +120,15 @@ pub async fn load_theme_styles(pool: &db::Pool, id: i32) -> String {
 }
 
 #[derive(serde::Serialize)]
-pub struct ThemeListing {
+pub struct Listing {
     pub id: i32,
+    pub active: bool,
     pub name: String,
-    pub is_default: bool,
-    pub preview_colors: ThemePreview,
+    pub can_delete: bool,
+    pub preview: Preview,
 }
 
-pub async fn list_themes(pool: &db::Pool) -> Vec<ThemeListing> {
+pub async fn list_all(pool: &db::Pool) -> Vec<Listing> {
     #[derive(FromRow)]
     struct Row {
         id: i32,
@@ -150,6 +142,8 @@ pub async fn list_themes(pool: &db::Pool) -> Vec<ThemeListing> {
         .await
         .unwrap();
 
+    let Profile { theme_id, .. } = profile::current(pool).await;
+
     rows.into_iter()
         .map(|row| {
             let Row {
@@ -161,27 +155,45 @@ pub async fn list_themes(pool: &db::Pool) -> Vec<ThemeListing> {
 
             let theme: Theme = from_binary(&dump);
 
-            ThemeListing {
+            Listing {
                 id,
+                active: theme_id == id,
                 name,
-                is_default,
-                preview_colors: get_preview_colors(&theme),
+                can_delete: !is_default && theme_id != id,
+                preview: get_preview_colors(&theme),
             }
         })
         .collect()
 }
 
 #[derive(serde::Deserialize)]
-pub struct ThemeBuilder {
+pub struct File {
     pub name: String,
-    pub tm_plist: String,
+    pub text: String,
 }
 
-pub async fn add_theme(pool: &db::Pool, builder: &ThemeBuilder) -> i32 {
-    let ThemeBuilder { name, tm_plist } = builder;
+const TM_THEME_EXT: &str = ".tmtheme";
 
-    let mut cursor = Cursor::new(tm_plist.as_bytes());
-    let theme = ThemeSet::load_from_reader(&mut cursor).unwrap();
+pub async fn import_theme(pool: &db::Pool, file: &File) -> Result<i32, String> {
+    let File { name, text } = file;
+
+    let parts: Vec<&str> = name.split(".").collect();
+    let valid = parts.len() == 2 && parts[1].to_ascii_lowercase() == "tmtheme";
+
+    if !valid {
+        return Err(String::from("File does not end in .tmtheme"));
+    }
+
+    let name = parts[0];
+
+    let mut cursor = Cursor::new(text.as_bytes());
+    let theme = ThemeSet::load_from_reader(&mut cursor);
+
+    if let Err(LoadingError::ReadSettings(_)) = theme {
+        return Err(String::from("Invalid syntax for .tmtheme"));
+    }
+
+    let theme = theme.unwrap();
 
     #[derive(FromRow)]
     struct Row {
@@ -193,7 +205,7 @@ pub async fn add_theme(pool: &db::Pool, builder: &ThemeBuilder) -> i32 {
 INSERT INTO
   theme (name, dump, is_default)
 VALUES
-  (?, ?, ?, ?) RETURNING id
+  (?, ?, ?) RETURNING id
       ",
     )
     .bind(name)
@@ -203,13 +215,5 @@ VALUES
     .await
     .unwrap();
 
-    id
-}
-
-pub async fn delete_theme(pool: &db::Pool, id: i32) {
-    sqlx::query("DELETE FROM theme WHERE id = ?")
-        .bind(id)
-        .execute(pool)
-        .await
-        .unwrap();
+    Ok(id)
 }

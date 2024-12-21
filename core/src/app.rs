@@ -7,12 +7,14 @@ use std::{
 use crate::{
     clipboard::Clipboard,
     db,
+    event::Dispatcher,
     handler::{
-        close_window, copy_snippet, delete_theme, get_user, import_theme, list_snippets,
-        list_themes, load_current_theme, preview_theme, update_user,
+        close_window, copy_snippet, delete_theme, get_settings, import_theme, list_snippets,
+        load_active_theme, update_user,
     },
+    profile::initialize,
+    settings,
     snippet::insert_snippet,
-    user::initialize,
 };
 use objc2_app_kit::{NSPasteboard, NSStringPboardType};
 use objc2_foundation::NSString;
@@ -21,6 +23,7 @@ use tauri::{
     async_runtime::block_on, generate_handler, AppHandle, Emitter, Manager, WebviewWindow,
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_positioner::{Position, WindowExt};
 use tauri_plugin_sql::DbPool;
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 
@@ -78,15 +81,29 @@ fn render_popup(handle: &AppHandle) -> WebviewWindow {
 }
 
 fn render_settings(handle: &AppHandle) -> WebviewWindow {
-    tauri::WebviewWindowBuilder::new(
+    let window = tauri::WebviewWindowBuilder::new(
         handle,
         "settings",
         tauri::WebviewUrl::App("src/settings/index.html".into()),
     )
     .inner_size(600.0, 600.0)
     .visible(false)
+    .transparent(true)
+    .always_on_top(true)
     .build()
-    .unwrap()
+    .unwrap();
+
+    window.move_window(Position::Center).unwrap();
+
+    apply_vibrancy(
+        &window,
+        NSVisualEffectMaterial::ContentBackground,
+        None,
+        None,
+    )
+    .unwrap();
+
+    window
 }
 
 async fn create_pool_from_handle(handle: &AppHandle) -> db::Pool {
@@ -121,27 +138,25 @@ pub fn start() {
                 .add_migrations(db::URL, db::list_migrations())
                 .build(),
         )
+        .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
-            let base_handle = app.handle();
+            let handle = app.handle();
 
-            let handle = base_handle.clone();
             let pool = block_on(create_pool_from_handle(&handle));
-
+            handle.manage(pool);
+            handle.manage(Dispatcher::new(&handle));
             handle.manage(Clipboard::new(pool));
             handle.manage(PasteTx(paste_tx));
 
-            tauri::async_runtime::block_on(async {
-                let clipboard = &*handle.state::<Clipboard>();
-                initialize(&clipboard).await
-            });
-
-            handle.plugin(tauri_plugin_positioner::init()).unwrap();
+            tauri::async_runtime::block_on(async { settings::initialize(&handle).await });
 
             // render_popup(&handle);
-            // render_settings(&handle);
+            let settings = render_settings(&handle);
+            settings.show().unwrap();
 
             let alt_p = Shortcut::new(Some(Modifiers::ALT), Code::KeyP);
             let esc = Shortcut::new(None, Code::Escape);
+            let meta_comma = Shortcut::new(Some(Modifiers::META), Code::Comma);
 
             handle.plugin(
                 tauri_plugin_global_shortcut::Builder::new()
@@ -149,6 +164,9 @@ pub fn start() {
                         if event.state != ShortcutState::Released {
                             return;
                         }
+                        // if shortcut == &meta_comma {
+                        //     if handle.fo
+                        // }
 
                         if shortcut == &alt_p {
                             let popup = if let Some(window) = handle.get_webview_window("popup") {
@@ -190,11 +208,9 @@ pub fn start() {
             Ok(())
         })
         .invoke_handler(generate_handler![
-            get_user,
-            update_user,
-            load_current_theme,
-            list_themes,
-            preview_theme,
+            get_settings,
+            load_active_theme,
+            
             import_theme,
             delete_theme,
             list_snippets,

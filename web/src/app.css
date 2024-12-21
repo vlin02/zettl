@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* Default light mode variables */
+  --primary: #29292a;
+  --foreground: red;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #007AFF;
+    --neutral-bg: #404040;
+    --neutral: #737373;
+    --foreground: #ffffff;
+    --background: #222325;
+  }
+}

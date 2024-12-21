@@ -33,17 +33,18 @@ END;
 
 CREATE TABLE
   theme (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
-    is_dark BOOL,
     dump BLOB,
     is_default BOOL
   );
 
 CREATE TABLE
-  user (
+  profile (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     popup_width INTEGER,
     popup_height INTEGER,
-    poll_interval INTEGER,
+    popup_transparent, BOOL,
     crop_whitespace BOOL,
     theme_id INTEGER,
     FOREIGN KEY (theme_id) REFERENCES theme (id)

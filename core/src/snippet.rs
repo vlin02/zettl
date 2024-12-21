@@ -1,11 +1,12 @@
 use crate::{
+    app::PasteTx,
     clipboard::Clipboard,
-    db,
     detection::{format::Format, infer_format},
     syntax::{format_to_scope, highlight_lines},
 };
 
 use sqlx::prelude::FromRow;
+use tauri::{AppHandle, Manager};
 
 pub async fn insert_snippet(session: &Clipboard, content: &str) {
     let Clipboard {
@@ -25,13 +26,20 @@ pub async fn insert_snippet(session: &Clipboard, content: &str) {
     let lines = highlight_lines(syntax_set, syntax, theme, content).unwrap();
     let lines = &serde_json::to_string(&lines).unwrap();
 
-    sqlx::query("INSERT INTO snippet (content, format, lines) VALUES (?, ?, jsonb(?))")
-        .bind(content)
-        .bind(format.key())
-        .bind(lines)
-        .execute(pool)
-        .await
-        .unwrap();
+    sqlx::query(
+        "
+        INSERT INTO
+        snippet (content, format, lines)
+        VALUES
+        (?, ?, jsonb (?))
+        ",
+    )
+    .bind(content)
+    .bind(format.key())
+    .bind(lines)
+    .execute(pool)
+    .await
+    .unwrap();
 }
 
 const PREVIEW_LINE_COUNT: usize = 5;
@@ -50,12 +58,6 @@ pub struct Snippet {
     pub preview_html: String,
 }
 
-#[derive(Debug, serde::Serialize)]
-pub struct SnippetPage {
-    pub snippets: Vec<Snippet>,
-    pub next_id: Option<i32>,
-}
-
 fn escape_like_query(s: &str) -> String {
     let mut escaped = String::new();
 
@@ -69,7 +71,7 @@ fn escape_like_query(s: &str) -> String {
     escaped
 }
 
-fn find_target_line_index(input: &str, target: &str) -> usize {
+fn find_target_line(input: &str, target: &str) -> usize {
     for (i, line) in input.lines().enumerate() {
         if line.to_ascii_lowercase().contains(target) {
             return i;
@@ -79,7 +81,16 @@ fn find_target_line_index(input: &str, target: &str) -> usize {
     panic!()
 }
 
-pub async fn find_snippets(session: &Clipboard, query: &SnippetsQuery) -> SnippetPage {
+#[derive(Debug, serde::Serialize)]
+pub struct Page {
+    pub snippets: Vec<Snippet>,
+    pub next_id: Option<i32>,
+}
+
+#[tauri::command]
+pub async fn query_snippets(handle: AppHandle, query: SnippetsQuery) -> Page {
+    let Clipboard { pool, lookup, .. } = &*handle.state::<Clipboard>();
+
     #[derive(FromRow)]
     struct Row {
         id: i32,
@@ -87,8 +98,6 @@ pub async fn find_snippets(session: &Clipboard, query: &SnippetsQuery) -> Snippe
         format: String,
         lines: String,
     }
-
-    let Clipboard { pool, lookup, .. } = session;
 
     let SnippetsQuery {
         search,
@@ -99,24 +108,24 @@ pub async fn find_snippets(session: &Clipboard, query: &SnippetsQuery) -> Snippe
 
     let rows: Vec<Row> = sqlx::query_as(
         "
-SELECT
-  snippet.id,
-  snippet.content,
-  snippet.format,
-  json (snippet.lines) as lines
-FROM
-  snippet
-  JOIN snippet_fts ON snippet.id = snippet_fts.rowid
-WHERE
-  (
-    ?
-    OR snippet_fts.rowid <= ?
-  )
-  AND snippet_fts.content LIKE ? COLLATE NOCASE ESCAPE '\\'
-ORDER BY
-  snippet.id DESC
-LIMIT
-  ?
+        SELECT
+        snippet.id,
+        snippet.content,
+        snippet.format,
+        json (snippet.lines) as lines
+        FROM
+        snippet
+        JOIN snippet_fts ON snippet.id = snippet_fts.rowid
+        WHERE
+        (
+            ?
+            OR snippet_fts.rowid <= ?
+        )
+        AND snippet_fts.content LIKE ? COLLATE NOCASE ESCAPE '\\'
+        ORDER BY
+        snippet.id DESC
+        LIMIT
+        ?
         ",
     )
     .bind(next_id.is_none())
@@ -127,7 +136,7 @@ LIMIT
     .await
     .unwrap();
 
-    let limit = *limit as usize;
+    let limit = limit as usize;
     let next_id = rows.get(limit).map(|x| x.id);
 
     let snippets: Vec<Snippet> = rows[..limit.min(rows.len())]
@@ -141,7 +150,7 @@ LIMIT
             } = row;
             let lines: Vec<String> = serde_json::from_str(lines).unwrap();
 
-            let target_i = find_target_line_index(&content, &search);
+            let target_i = find_target_line(&content, &search);
 
             Snippet {
                 id: *id,
@@ -152,10 +161,14 @@ LIMIT
         })
         .collect();
 
-    return SnippetPage { next_id, snippets };
+    Page { next_id, snippets }
 }
 
-pub async fn get_content(pool: &db::Pool, id: i32) -> String {
+#[tauri::command]
+pub async fn copy_snippet(handle: AppHandle, id: i32) {
+    let PasteTx(paste_tx) = &*handle.state::<PasteTx>();
+    let Clipboard { pool, .. } = &*handle.state::<Clipboard>();
+
     #[derive(FromRow)]
     struct Row {
         content: String,
@@ -163,12 +176,12 @@ pub async fn get_content(pool: &db::Pool, id: i32) -> String {
 
     let row: Row = sqlx::query_as(
         "
-SELECT
-  snippet.content
-FROM
-  snippet
-WHERE
-  snippet.id = ?
+        SELECT
+        snippet.content
+        FROM
+        snippet
+        WHERE
+        snippet.id = ?
     ",
     )
     .bind(id)
@@ -177,5 +190,6 @@ WHERE
     .unwrap();
 
     let Row { content } = row;
-    content
+
+    paste_tx.send(content).unwrap();
 }

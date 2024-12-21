@@ -1,50 +1,72 @@
 import { invoke } from "@tauri-apps/api/core"
 
-export type SnippetData = {
+export type Snippet = {
   id: number
   start: number
   preview_html: string
 }
 
-export type Snippet = {
-  id: number
-  start: number
-  previewHtml: string
+type User = {
+  popup_width: number
+  popup_height: number
+  popup_transparent: boolean
+  theme_id: number
+  crop_whitespace: boolean
 }
 
-export async function listSnippets({
-  startId,
-  search,
-  limit
-}: {
-  startId: number | null
+type ThemeListing = {
+  id: number
+  name: string
+  can_delete: boolean
+  active: boolean
+  preview_colors: { r: number; g: number; b: number; a: number }[]
+}
+
+export type Settings = { user: User; themes: ThemeListing[] }
+
+export async function listSnippets(query: {
+  start_id: number | null
   search: string
   limit: number
 }): Promise<{ snippets: Snippet[]; nextId: number | null }> {
-  const {
-    snippets,
-    next_id
-  }: {
-    snippets: SnippetData[]
-    next_id: number | null
-  } = await invoke("list_snippets", {
-    query: {
-      start_id: startId,
-      search,
-      limit
-    }
+  return invoke("list_snippets", {
+    query
   })
-
-  return {
-    snippets: snippets.map(({ id, start, preview_html }) => {
-      return { id, start, previewHtml: preview_html }
-    }),
-    nextId: next_id
-  }
 }
 
 export async function copySnippet(id: number) {
   await invoke("copy_snippet", { id })
+}
+
+export async function getSettings(): Promise<Settings> {
+  return invoke("get_settings")
+}
+
+export async function updateUser(user: User) {
+  await invoke("update_user", user)
+}
+
+export async function setActiveTheme(id: number) {
+  await invoke("set_active_theme", { id })
+}
+
+export async function importTheme(name: string, text: string) {
+  await invoke("import_theme", {
+    name,
+    text
+  })
+}
+
+export async function deleteTheme(id: number) {
+  await invoke("delete_theme", { id })
+}
+
+export async function previewTheme(tmPlist: string) {
+  await invoke("preview_theme", { tm_plist: tmPlist })
+}
+
+export async function loadActiveTheme(tmPlist: string) {
+  await invoke("load_active_theme", { tm_plist: tmPlist })
 }
 
 export async function closeWindow() {
