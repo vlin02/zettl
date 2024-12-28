@@ -1,19 +1,19 @@
 use app::start;
 
+mod app;
+pub mod shortcuts;
+pub mod clipboard;
+pub mod pasteboard;
 pub mod db;
 pub mod detection;
-#[macro_use]
-pub mod handler;
+pub mod event;
 pub mod lookup;
-pub mod clipboard;
+pub mod profile;
+pub mod settings;
 pub mod snippet;
 pub mod syntax;
-pub mod profile;
 pub mod theme;
-pub mod event;
-pub mod settings;
-pub mod shortcuts;
-mod app;
+pub mod window;
 
 fn main() {
     start();

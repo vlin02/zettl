@@ -47,6 +47,7 @@ CREATE TABLE
     popup_transparent, BOOL,
     crop_whitespace BOOL,
     theme_id INTEGER,
+    show_popup_shortcut BLOB,
     FOREIGN KEY (theme_id) REFERENCES theme (id)
   );
 ",

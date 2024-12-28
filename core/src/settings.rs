@@ -11,6 +11,17 @@ async fn is_initialized(pool: &db::Pool) -> bool {
     exists.0
 }
 
+pub async fn initialize(handle: &AppHandle) {
+    let pool = &*handle.state::<db::Pool>();
+
+    if is_initialized(&pool).await {
+        return;
+    }
+
+    let theme_id = theme::populate_defaults(pool).await;
+    profile::initialize(pool, theme_id).await;
+}
+
 #[derive(serde::Serialize)]
 pub struct Settings {
     pub popup_width: i32,
@@ -20,16 +31,19 @@ pub struct Settings {
     pub themes: Vec<theme::Listing>,
 }
 
-pub async fn get_settings(pool: &db::Pool) -> Settings {
-    let profile::Profile {
+#[tauri::command]
+pub async fn get_settings(handle: AppHandle) -> Settings {
+    let pool = handle.state::<db::Pool>();
+
+    let profile::Appearance {
         popup_height,
         popup_width,
         popup_transparent,
         crop_whitespace,
         ..
-    } = profile::current(pool).await;
+    } = profile::find_appearance(&pool).await;
 
-    let themes = theme::list_all(pool).await;
+    let themes = theme::list_all(&pool).await;
 
     return Settings {
         popup_height,
@@ -38,33 +52,4 @@ pub async fn get_settings(pool: &db::Pool) -> Settings {
         crop_whitespace,
         themes,
     };
-}
-
-pub async fn initialize(handle: &AppHandle) {
-    let pool = &*handle.state::<db::Pool>();
-    if is_initialized(&pool).await {
-        return;
-    }
-
-    let theme_id = theme::populate_defaults(pool).await;
-    profile::initialize(pool, theme_id).await;
-}
-
-pub async fn set_active_theme(pool: &db::Pool, id: i32) {
-    sqlx::query("UPDATE FROM theme WHERE id = ?")
-        .bind(id)
-        .execute(pool)
-        .await
-        .unwrap();
-}
-
-#[tauri::command]
-pub async fn delete_theme(id: i32) {
-    
-
-    sqlx::query("DELETE FROM theme WHERE id = ?")
-        .bind(id)
-        .execute(pool)
-        .await
-        .unwrap();
 }

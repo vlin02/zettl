@@ -1,6 +1,9 @@
 use std::{io::Cursor, str::FromStr};
 
-use crate::{db, profile::{self, Profile}};
+use crate::{
+    db,
+    profile::{self, Appearance},
+};
 use sqlx::FromRow;
 use syntect::{
     dumps::{dump_binary, from_binary},
@@ -9,6 +12,7 @@ use syntect::{
     parsing::{MatchPower, ScopeStack},
     LoadingError,
 };
+use tauri::{AppHandle, Manager};
 
 const PREVIEW_SCOPES: [&str; 5] = [
     "keyword.control.conditional",
@@ -103,7 +107,10 @@ VALUES
     default_id.unwrap()
 }
 
-pub async fn load_theme_css(pool: &db::Pool, id: i32) -> String {
+#[tauri::command]
+pub async fn load_active_theme(handle: AppHandle, id: i32) -> String {
+    let pool = &*handle.state::<db::Pool>();
+
     #[derive(FromRow)]
     struct Row {
         dump: Vec<u8>,
@@ -142,7 +149,7 @@ pub async fn list_all(pool: &db::Pool) -> Vec<Listing> {
         .await
         .unwrap();
 
-    let Profile { theme_id, .. } = profile::current(pool).await;
+    let Appearance { theme_id, .. } = profile::find_appearance(pool).await;
 
     rows.into_iter()
         .map(|row| {
@@ -174,7 +181,10 @@ pub struct File {
 
 const TM_THEME_EXT: &str = ".tmtheme";
 
-pub async fn import_theme(pool: &db::Pool, file: &File) -> Result<i32, String> {
+#[tauri::command]
+pub async fn import_theme(handle: AppHandle, file: File) -> Result<i32, String> {
+    let pool = &*handle.state::<db::Pool>();
+
     let File { name, text } = file;
 
     let parts: Vec<&str> = name.split(".").collect();
@@ -216,4 +226,26 @@ VALUES
     .unwrap();
 
     Ok(id)
+}
+
+#[tauri::command]
+pub async fn set_active(handle: AppHandle, id: i32) {
+    let pool = &*handle.state::<db::Pool>();
+
+    sqlx::query("UPDATE FROM theme WHERE id = ?")
+        .bind(id)
+        .execute(pool)
+        .await
+        .unwrap();
+}
+
+#[tauri::command]
+pub async fn delete(handle: AppHandle, id: i32) {
+    let pool = &*handle.state::<db::Pool>();
+
+    sqlx::query("DELETE FROM theme WHERE id = ?")
+        .bind(id)
+        .execute(pool)
+        .await
+        .unwrap();
 }

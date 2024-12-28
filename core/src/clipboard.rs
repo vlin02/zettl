@@ -11,7 +11,7 @@ pub struct Clipboard {
 }
 
 impl Clipboard {
-    pub fn new(pool: db::Pool) -> Clipboard {
+    pub fn new(pool: &db::Pool) -> Clipboard {
         Clipboard {
             ort: ort::session::Session::builder()
                 .unwrap()
@@ -20,7 +20,7 @@ impl Clipboard {
             syntax_set: SyntaxSet::load_defaults_newlines(),
             theme_set: ThemeSet::load_defaults(),
             lookup: lookup::LookupTable::new(),
-            pool,
+            pool: pool.clone(),
         }
     }
 }

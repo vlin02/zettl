@@ -1,7 +1,7 @@
 use crate::{
-    app::PasteTx,
     clipboard::Clipboard,
     detection::{format::Format, infer_format},
+    pasteboard::Pasteboard,
     syntax::{format_to_scope, highlight_lines},
 };
 
@@ -88,7 +88,7 @@ pub struct Page {
 }
 
 #[tauri::command]
-pub async fn query_snippets(handle: AppHandle, query: SnippetsQuery) -> Page {
+pub async fn list_snippets(handle: AppHandle, query: SnippetsQuery) -> Page {
     let Clipboard { pool, lookup, .. } = &*handle.state::<Clipboard>();
 
     #[derive(FromRow)]
@@ -166,7 +166,7 @@ pub async fn query_snippets(handle: AppHandle, query: SnippetsQuery) -> Page {
 
 #[tauri::command]
 pub async fn copy_snippet(handle: AppHandle, id: i32) {
-    let PasteTx(paste_tx) = &*handle.state::<PasteTx>();
+    let pasteboard = &*handle.state::<Pasteboard>();
     let Clipboard { pool, .. } = &*handle.state::<Clipboard>();
 
     #[derive(FromRow)]
@@ -191,5 +191,5 @@ pub async fn copy_snippet(handle: AppHandle, id: i32) {
 
     let Row { content } = row;
 
-    paste_tx.send(content).unwrap();
+    pasteboard.copy(&content)
 }
