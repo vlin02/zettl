@@ -3,7 +3,7 @@ use crate::{
     db,
     event::Event,
     pasteboard::Pasteboard,
-    settings, shortcuts,
+    settings::{self, get_settings}, shortcuts,
     snippet::{insert_snippet, list_snippets},
     window::Window,
 };
@@ -69,7 +69,15 @@ pub fn start() {
 
             Ok(())
         })
-        .invoke_handler(generate_handler![list_snippets])
+        .invoke_handler(generate_handler![
+            get_settings,
+            load_active_theme,
+            import_theme,
+            delete_theme,
+            list_snippets,
+            copy_snippet,
+            close_window
+        ])
         .on_window_event(|window, event| {
             if window.label() == Window::POPUP.label() {
                 match event {
