@@ -15,6 +15,8 @@ _MacOS clipboard app for developers_
 ### Demo
 
 
+https://github.com/user-attachments/assets/f05c3513-e0a6-43f7-b3fc-b907e30b7cd6
+
 ### Theming
 
 Several built-in themes are provided:
