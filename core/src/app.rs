@@ -1,10 +1,16 @@
 use crate::{
-    clipboard::Clipboard, db, event::Event, pasteboard::Pasteboard, settings, shortcuts,
-    snippet::insert_snippet, window::Window,
+    clipboard::Clipboard,
+    db,
+    event::Event,
+    pasteboard::Pasteboard,
+    settings, shortcuts,
+    snippet::{insert_snippet, list_snippets},
+    window::Window,
 };
 
 use tauri::{
     async_runtime::{self, block_on},
+    generate_handler,
     plugin::Plugin,
     AppHandle, Emitter, Listener, Manager,
 };
@@ -51,17 +57,19 @@ pub fn start() {
             });
 
             let handle = app.clone();
-            let mut shortcuts_plugin = async_runtime::block_on(shortcuts::build_plugin(&handle));
-            // app.plugin(shortcuts_plugin);
 
-            app.listen(Event::HotkeysInvalidated.name(), move |_| {
-                handle.remove_plugin(shortcuts_plugin.name());
-                shortcuts_plugin = async_runtime::block_on(shortcuts::build_plugin(&handle));
-                handle.plugin(shortcuts_plugin);
-            });
+            let mut shortcuts_plugin = async_runtime::block_on(shortcuts::build_plugin(&handle));
+            app.plugin(shortcuts_plugin);
+
+            // app.listen(Event::HotkeysInvalidated.name(), move |_| {
+            //     app.remove_plugin(shortcuts_plugin.name());
+            //     shortcuts_plugin = async_runtime::block_on(shortcuts::build_plugin(&handle));
+            //     app.plugin(shortcuts_plugin);
+            // });
 
             Ok(())
         })
+        .invoke_handler(generate_handler![list_snippets])
         .on_window_event(|window, event| {
             if window.label() == Window::POPUP.label() {
                 match event {

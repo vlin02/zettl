@@ -44,7 +44,7 @@
 
     const page = await listSnippets({
       search: search ?? list.search,
-      startId: search !== undefined ? null : list.nextId,
+      start_id: search !== undefined ? null : list.nextId,
       limit: PAGE_SIZE
     })
 
