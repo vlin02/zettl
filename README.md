@@ -7,12 +7,13 @@ _MacOS clipboard app for developers_
 
 - Snippet language detection
 - Snippet syntax highlighting
-- All major languages supported
-- Customizable / importable themes
+- Supports all [major languages](#supported-languages)
+- Customizable / importable [themes](#theming)
 - Blazingly fast search
-- 100% local. No external requests or storage.
+- 100% local. No external requests or storage
 
 ### Demo
+
 
 ### Theming
 
