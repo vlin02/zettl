@@ -92,7 +92,8 @@
   })
 
   $effect(() => {
-    listen<string>("content-copied", () => {
+    listen<string>("zettl://popup-invalidated", () => {
+      console.log("here")
       maybeLoadNextPage("")
     })
   })

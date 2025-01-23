@@ -18,8 +18,5 @@ pub mod theme;
 pub mod window;
 
 fn main() {
-    // let pool = block_on(SqlitePool::connect("/Users/vilin/Library/Application Support/io.zettl.app/zettl.db")).unwrap();
-    // let row: (i64,) = block_on(query_as("SELECT count(*) FROM snippet").fetch_one(&pool)).unwrap();
-    // println!("{:?}", row);
     start();
 }

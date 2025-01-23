@@ -3,16 +3,13 @@ use crate::{
     db,
     event::Event,
     pasteboard::Pasteboard,
-    settings::{self, get_settings}, shortcuts,
-    snippet::{insert_snippet, list_snippets},
-    window::Window,
+    settings, shortcuts, snippet, theme,
+    window::{self, Window},
 };
 
 use tauri::{
     async_runtime::{self, block_on},
-    generate_handler,
-    plugin::Plugin,
-    AppHandle, Emitter, Listener, Manager,
+    generate_handler, AppHandle, Emitter, Manager,
 };
 use tauri_plugin_sql::DbPool;
 
@@ -50,8 +47,8 @@ pub fn start() {
             tauri::async_runtime::spawn(async move {
                 let clipboard = &*handle.state::<Clipboard>();
                 for content in copy_rx {
-                    insert_snippet(&clipboard, &content).await;
-
+                    snippet::insert_snippet(&clipboard, &content).await;
+                    println!("emitting");
                     handle.emit(&Event::PopupInvalidated.name(), 0).unwrap()
                 }
             });
@@ -70,13 +67,11 @@ pub fn start() {
             Ok(())
         })
         .invoke_handler(generate_handler![
-            get_settings,
-            load_active_theme,
-            import_theme,
-            delete_theme,
-            list_snippets,
-            copy_snippet,
-            close_window
+            settings::get_settings,
+            theme::load_active_theme,
+            theme::import_theme,
+            snippet::list_snippets,
+            snippet::copy_snippet,
         ])
         .on_window_event(|window, event| {
             if window.label() == Window::POPUP.label() {
