@@ -10,7 +10,7 @@ _MacOS clipboard app for developers_
 - Supports all [major languages](#supported-languages)
 - Customizable / importable [themes](#theming)
 - Blazingly fast search
-- 100% local. No external requests or storage
+- Secure. 100% local storage + ML models
 
 ### Demo
 
