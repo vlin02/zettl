@@ -48,7 +48,6 @@ pub fn start() {
                 let clipboard = &*handle.state::<Clipboard>();
                 for content in copy_rx {
                     snippet::insert_snippet(&clipboard, &content).await;
-                    println!("emitting");
                     handle.emit(&Event::PopupInvalidated.name(), 0).unwrap()
                 }
             });
