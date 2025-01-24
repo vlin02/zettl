@@ -14,7 +14,7 @@ _MacOS clipboard app for developers_
 
 ### Demo
 
-https://github.com/user-attachments/assets/1c826767-b29d-40c1-a5f7-36030a0ec197
+https://github.com/user-attachments/assets/c1a31d46-c843-4a26-90b4-f650adc1336c
 
 ### Theming
 
