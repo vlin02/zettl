@@ -11,6 +11,7 @@ _MacOS clipboard app for developers_
 - Customizable / importable [themes](#theming)
 - Blazingly fast search
 - Secure. 100% local storage + ML models
+- Keyboard centric actions (copy, paste, search, w/o the mouse) 
 
 ### Demo
 
