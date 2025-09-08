@@ -26,7 +26,7 @@ tasks:
       CGO_ENABLED: 1
       GOARCH: '{{.ARCH | default ARCH}}'
       CGO_CFLAGS: "-mmacosx-version-min=10.15"
-      CGO_LDFLAGS: "-mmacosx-version-min=10.15"
+      CGO_LDFLAGS: "-mmacosx-version-min=10.15 -Wl,-no_warn_duplicate_libraries"
       MACOSX_DEPLOYMENT_TARGET: "10.15"
       PRODUCTION: '{{.PRODUCTION | default "false"}}'
 

@@ -28,7 +28,6 @@ func main() {
 	svc := &Service{}
 	app := application.New(application.Options{
 		Name:        "zettl",
-		Description: "A demo of using raw HTML & CSS",
 		Services: []application.Service{
 			application.NewService(svc),
 		},

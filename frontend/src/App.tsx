@@ -1,54 +1,61 @@
-import { useState, useEffect } from 'react'
-import {Events, WML} from "@wailsio/runtime";
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 
 function App() {
-  const [name, setName] = useState<string>('');
-  const [result, setResult] = useState<string>('Please enter your name below 👇');
-  const [time, setTime] = useState<string>('Listening for Time event...');
-
-  const doGreet = () => {
-    // let localName = name;
-    // if (!localName) {
-    //   localName = 'anonymous';
-    // }
-    // GreetService.Greet(localName).then((resultValue: string) => {
-    //   setResult(resultValue);
-    // }).catch((err: any) => {
-    //   console.log(err);
-    // });
-  }
-
-  useEffect(() => {
-    Events.On('time', (timeValue: any) => {
-      setTime(timeValue.data);
-    });
-    // Reload WML so it picks up the wml tags
-    WML.Reload();
-  }, []);
+  const [switchOn, setSwitchOn] = useState(false)
+  const [value, setValue] = useState('')
+  const [choice, setChoice] = useState<string | undefined>()
 
   return (
-      <div className="container">
-        <div>
-          <a data-wml-openURL="https://wails.io">
-            <img src="/wails.png" className="logo" alt="Wails logo"/>
-          </a>
-          <a data-wml-openURL="https://reactjs.org">
-            <img src="/react.svg" className="logo react" alt="React logo"/>
-          </a>
-        </div>
-        <h1>Wails + React</h1>
-        <div className="result">{result}</div>
-        <div className="card">
-          <div className="input-box">
-            <input className="input" value={name} onChange={(e) => setName(e.target.value)} type="text" autoComplete="off"/>
-            <button className="btn" onClick={doGreet}>Greet</button>
+    <div className="min-h-screen bg-background text-foreground p-8 space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Component demo</h1>
+        <p className="text-sm text-muted-foreground">shadcn/ui components wired up inside Wails + React.</p>
+      </header>
+      <section className="space-y-6">
+        <div className="space-y-2">
+          <h2 className="text-lg font-medium">Buttons</h2>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => console.log("wef")}>Default</Button>
+            <Button variant="outline">Outline</Button>
+            <Button variant="ghost">Ghost</Button>
           </div>
         </div>
-        <div className="footer">
-          <div><p>Click on the Wails logo to learn more</p></div>
-          <div><p>{time}</p></div>
+        <div className="space-y-2">
+          <h2 className="text-lg font-medium">Input</h2>
+          <div className="flex gap-2 items-center">
+            <Input className="w-64" placeholder="Type something" value={value} onChange={e=>setValue(e.target.value)} />
+            <span className="text-sm text-muted-foreground truncate max-w-xs">Value: {value || '—'}</span>
+          </div>
         </div>
-      </div>
+        <div className="space-y-2">
+          <h2 className="text-lg font-medium">Switch</h2>
+            <div className="flex items-center gap-3">
+              <Switch checked={switchOn} onCheckedChange={setSwitchOn} />
+              <span className="text-sm text-muted-foreground">{switchOn ? 'On' : 'Off'}</span>
+            </div>
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-lg font-medium">Select</h2>
+          <div className="w-48">
+            <Select value={choice} onValueChange={setChoice}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="one">One</SelectItem>
+                <SelectItem value="two">Two</SelectItem>
+                <SelectItem value="three">Three</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-sm text-muted-foreground">Selected: {choice || '—'}</p>
+        </div>
+      </section>
+    </div>
   )
 }
 
