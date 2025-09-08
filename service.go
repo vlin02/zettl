@@ -45,6 +45,9 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 			Backdrop: application.MacBackdropTransparent,
 			TitleBar: application.MacTitleBarHiddenInset,
 			Panel:    true,
+			LiquidGlass: application.MacLiquidGlass{
+				CornerRadius: 0,
+			},
 		},
 		URL: "/",
 	})
@@ -80,14 +83,26 @@ func (s *Service) show() {
 	y := r.Y
 	h := r.H
 	if did == 0 {
-		y += 25
-		h -= 25
+		y += 40
+		h -= 40
 	}
 	curW, _ := s.window.Size()
 	s.window.SetSize(curW, h)
 	s.app.Event.Emit("windowHeight", h)
 	s.window.SetPosition(r.X, y)
 	s.window.Show()
+
+	// Simulate a click inside the window to allow typing without manual click
+	go func(x, y int) {
+		// brief delay to ensure window is ready
+		time.Sleep(100 * time.Millisecond)
+		ox, oy := robotgo.Location()
+		tx := x + 40
+		ty := y + 40
+		robotgo.Move(tx, ty)
+		robotgo.Click("left", false)
+		robotgo.Move(ox, oy)
+	}(r.X, y)
 }
 
 func (s *Service) FindSnippets(q string, before int64, limit int) []pkg.SnippetPreview {

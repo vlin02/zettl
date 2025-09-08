@@ -23,13 +23,12 @@ tasks:
       - cmd: rm -f *.syso
         platforms: [linux, darwin]
     vars:
-      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{else}}-buildvcs=false -gcflags=all="-l"{{end}}'
+      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags "production {{.TAGS}}" -trimpath -buildvcs=false -ldflags="-w -s -H windowsgui"{{else}}-tags "{{.TAGS}}" -buildvcs=false -gcflags=all="-l"{{end}}'
     env:
       GOOS: windows
-      CGO_ENABLED: 0
+      CGO_ENABLED: 1
       GOARCH: '{{.ARCH | default ARCH}}'
       PRODUCTION: '{{.PRODUCTION | default "false"}}'
-
   package:
     summary: Packages a production build of the application
     cmds:

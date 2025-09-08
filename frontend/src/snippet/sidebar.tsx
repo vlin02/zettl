@@ -17,9 +17,9 @@ import {
   GetUISettings,
   SetUITheme,
 } from '../../bindings/zettl/service.ts'
- 
- const arrowDirection = (key: string): 'up' | 'down' | null =>
-   key === 'ArrowDown' ? 'down' : key === 'ArrowUp' ? 'up' : null
+
+const arrowDirection = (key: string): 'up' | 'down' | null =>
+  key === 'ArrowDown' ? 'down' : key === 'ArrowUp' ? 'up' : null
 
 const SCROLL_DELAY = 100
 const SCROLL_INTERVAL = 20
@@ -173,10 +173,9 @@ export function ClipboardSidebar() {
     queryRef.current?.focus()
   }, [])
 
-  
   useEffect(() => {
     const onVis = () => {
-      console.log("here")
+      console.log('here')
       queryRef.current?.focus()
       queryRef.current?.select()
     }
@@ -238,18 +237,27 @@ export function ClipboardSidebar() {
   }, [])
 
   useEffect(() => {
-    if (showSettings) { stopScroll(); return }
+    if (showSettings) {
+      stopScroll()
+      return
+    }
     let lastDir: 'up' | 'down' | null = null
     const onKeyDown = (e: KeyboardEvent) => {
       const dir = arrowDirection(e.key)
       if (!dir) return
       e.preventDefault()
-      if (lastDir !== dir) { lastDir = dir; startScroll(dir) }
+      if (lastDir !== dir) {
+        lastDir = dir
+        startScroll(dir)
+      }
     }
     const onKeyUp = (e: KeyboardEvent) => {
       const dir = arrowDirection(e.key)
       if (!dir) return
-      if (lastDir === dir) { lastDir = null; stopScroll() }
+      if (lastDir === dir) {
+        lastDir = null
+        stopScroll()
+      }
     }
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
@@ -345,7 +353,7 @@ export function ClipboardSidebar() {
                     handleQueryChange(e.target.value)
                   }
                   className="pl-10 h-8 text-sm bg-background/50 border-border/50"
-                  id="query"
+                  id="zettl-focus-input"
                   ref={queryRef}
                 />
               </div>

@@ -10,25 +10,23 @@ vars:
   APP_NAME: "zettl"
   BIN_DIR: "bin"
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  TAGS: sqlite_fts5
 
 tasks:
   build:
-    summary: Builds the application
+    summary: Build app
     cmds:
       - task: "{{OS}}:build"
-
   package:
-    summary: Packages a production build of the application
+    summary: Package app
     cmds:
       - task: "{{OS}}:package"
-
   run:
-    summary: Runs the application
+    summary: Run app
     cmds:
       - task: "{{OS}}:run"
-
   dev:
-    summary: Runs the application in development mode
+    summary: Dev mode
     cmds:
       - ZETTL_ENV=development wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
