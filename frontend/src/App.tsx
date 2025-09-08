@@ -1,60 +1,52 @@
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { useEffect, useRef, useState } from 'react'
+import { ClipboardSidebar } from './snippet/sidebar'
+import { Window, Events } from '@wailsio/runtime'
 
 function App() {
-  const [switchOn, setSwitchOn] = useState(false)
-  const [value, setValue] = useState('')
-  const [choice, setChoice] = useState<string | undefined>()
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [sidebarKey, setSidebarKey] = useState(0)
+
+  const heightRef = useRef(0)
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    const unsub = Events.On('windowHeight', ev => {
+      const h: number = ev.data[0]
+      if (h !== heightRef.current) {
+        heightRef.current = h
+        setHeight(h)
+      }
+    })
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    if (!rootRef.current) return
+    let prevW = 0
+    const ro = new ResizeObserver(entries => {
+      const w = Math.round(entries[0].contentRect.width)
+      if (w !== prevW && heightRef.current) {
+        prevW = w
+        Window.SetSize(w, heightRef.current)
+      }
+    })
+    ro.observe(rootRef.current)
+    return () => ro.disconnect()
+  }, [height])
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        setSidebarKey(k => 1 - k)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8 space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Component demo</h1>
-        <p className="text-sm text-muted-foreground">shadcn/ui components wired up inside Wails + React.</p>
-      </header>
-      <section className="space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-lg font-medium">Buttons</h2>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => console.log("wef")}>Default</Button>
-            <Button variant="outline">Outline</Button>
-            <Button variant="ghost">Ghost</Button>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-lg font-medium">Input</h2>
-          <div className="flex gap-2 items-center">
-            <Input className="w-64" placeholder="Type something" value={value} onChange={e=>setValue(e.target.value)} />
-            <span className="text-sm text-muted-foreground truncate max-w-xs">Value: {value || '—'}</span>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-lg font-medium">Switch</h2>
-            <div className="flex items-center gap-3">
-              <Switch checked={switchOn} onCheckedChange={setSwitchOn} />
-              <span className="text-sm text-muted-foreground">{switchOn ? 'On' : 'Off'}</span>
-            </div>
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-lg font-medium">Select</h2>
-          <div className="w-48">
-            <Select value={choice} onValueChange={setChoice}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="one">One</SelectItem>
-                <SelectItem value="two">Two</SelectItem>
-                <SelectItem value="three">Three</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <p className="text-sm text-muted-foreground">Selected: {choice || '—'}</p>
-        </div>
-      </section>
+    <div className="h-screen w-fit" ref={rootRef}>
+      <ClipboardSidebar key={sidebarKey} />
     </div>
   )
 }

@@ -21,11 +21,11 @@ export function SnippetItem({
     <div
       id={`snip-${snippet.id}`}
       onClick={onClick}
-      className={`group relative w-full min-w-0 p-3 rounded-lg cursor-pointer border border-border/50 bg-card/50 hover:bg-accent/50 hover:border-accent-foreground/20 ${
-        isSelected ? 'bg-card/90 ring-1 ring-primary/20 border-primary/30' : ''
+      className={`group relative p-3 rounded-lg cursor-pointer border border-border/50 bg-card/60 hover:bg-accent/40 ${
+        isSelected ? 'border-primary/40 bg-accent/30' : ''
       }`}
     >
-      <div className="w-full overflow-hidden">
+      <div className="overflow-hidden">
         <div
           className="font-mono leading-relaxed text-foreground/80 whitespace-pre w-[100ch] chroma"
           style={{ fontSize: `${fontSize}px` }}
@@ -39,10 +39,8 @@ export function SnippetItem({
           setCopied(true)
           setTimeout(() => setCopied(false), 1000)
         }}
-        className={`absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 bg-background/80 hover:bg-background border border-border/50 hover:border-border transition-all duration-200 ${
-          copied
-            ? 'bg-success/10 border-success/30 text-success dark:bg-success/20 dark:border-success/40 dark:text-success'
-            : ''
+  className={`absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 bg-background/80 hover:bg-background/90 border border-border/50 transition-colors ${
+          copied ? 'bg-success/15 border-success/40 text-success' : ''
         }`}
       >
         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}

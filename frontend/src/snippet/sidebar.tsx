@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Input } from '../components/ui/input'
+import { Input } from '../components/ui/input.tsx'
 import { Clipboard, Window } from '@wailsio/runtime'
-import { UISettings, SnippetPreview } from '../../bindings/zettl/pkg/models'
-import { Search } from './clipboard-icons.tsx'
+import { UISettings, SnippetPreview } from '../../bindings/zettl/pkg/models.ts'
+import { Search } from './language.tsx'
 import { Sun, Moon, Settings as SettingsIcon } from 'lucide-react'
-import { SnippetItem } from './snippet-item'
-import { SettingsPanel } from '../settings/panel'
-import { SnippetDetail } from './snippet-detail'
-import { detect } from '../detect'
+import { Button } from '../components/ui/button.tsx'
+import { SnippetItem } from './item.tsx'
+import { SettingsPanel } from '../settings/panel.tsx'
+import { ExpandedSnippetView } from './expanded.tsx'
+import { detect } from '../detect.ts'
 import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized'
-import { AddSnippet, FindSnippets, GetUISettings, SetUITheme } from '../../bindings/zettl/service'
+import {
+  AddSnippet,
+  FindSnippets,
+  GetUISettings,
+  SetUITheme,
+} from '../../bindings/zettl/service.ts'
+ 
+ const arrowDirection = (key: string): 'up' | 'down' | null =>
+   key === 'ArrowDown' ? 'down' : key === 'ArrowUp' ? 'up' : null
 
 const SCROLL_DELAY = 100
 const SCROLL_INTERVAL = 20
@@ -164,6 +173,17 @@ export function ClipboardSidebar() {
     queryRef.current?.focus()
   }, [])
 
+  
+  useEffect(() => {
+    const onVis = () => {
+      console.log("here")
+      queryRef.current?.focus()
+      queryRef.current?.select()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
+
   const handleQueryChange = async (newQuery: string) => {
     const currentLockId = ++pageLockId.current
 
@@ -218,37 +238,21 @@ export function ClipboardSidebar() {
   }, [])
 
   useEffect(() => {
-    if (showSettings) {
-      stopScroll()
-      return
-    }
-
-    let scrollDirection: 'up' | 'down' | null = null
-
+    if (showSettings) { stopScroll(); return }
+    let lastDir: 'up' | 'down' | null = null
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
-
+      const dir = arrowDirection(e.key)
+      if (!dir) return
       e.preventDefault()
-      const direction = e.key === 'ArrowDown' ? 'down' : 'up'
-
-      if (scrollDirection !== direction) {
-        scrollDirection = direction
-        startScroll(direction)
-      }
+      if (lastDir !== dir) { lastDir = dir; startScroll(dir) }
     }
-
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
-      const direction = e.key === 'ArrowDown' ? 'down' : 'up'
-      if (scrollDirection === direction) {
-        scrollDirection = null
-        stopScroll()
-      }
+      const dir = arrowDirection(e.key)
+      if (!dir) return
+      if (lastDir === dir) { lastDir = null; stopScroll() }
     }
-
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
-
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
@@ -295,7 +299,7 @@ export function ClipboardSidebar() {
   const bgStyle = showSettings ? { backgroundColor: bgColor } : { backgroundColor: bgColor + 'F2' } // 95% opacity
 
   return (
-    <div className="h-full backdrop-blur-xl flex relative transition-all overflow-hidden">
+    <div className="h-full backdrop-blur-xl flex overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: settings.style.css }} />
       <div className="w-[60ch] flex flex-col min-h-0 overflow-hidden" style={bgStyle}>
         {showSettings ? (
@@ -308,27 +312,29 @@ export function ClipboardSidebar() {
         ) : (
           <>
             <div className="p-3 flex items-center gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={onToggleTheme}
                 title={`${settings.theme === 'dark' ? 'dark' : 'light'} mode`}
-                className="relative h-8 w-8 rounded-full border border-border/50 hover:bg-accent/30 flex items-center justify-center overflow-hidden"
+                variant="secondary"
+                size="icon"
+                className="relative rounded-full overflow-hidden h-8 w-8"
               >
                 <Sun
-                  className={`absolute h-4 w-4 transition-all duration-300 ${
+                  className={`absolute h-4 w-4 transition-transform duration-300 ${
                     settings.theme === 'light'
                       ? 'opacity-100 scale-100 rotate-0'
                       : 'opacity-0 scale-0 -rotate-90'
                   }`}
                 />
                 <Moon
-                  className={`absolute h-4 w-4 transition-all duration-300 ${
+                  className={`absolute h-4 w-4 transition-transform duration-300 ${
                     settings.theme === 'dark'
                       ? 'opacity-100 scale-100 rotate-0'
                       : 'opacity-0 scale-0 rotate-90'
                   }`}
                 />
-              </button>
+              </Button>
 
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -338,23 +344,25 @@ export function ClipboardSidebar() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     handleQueryChange(e.target.value)
                   }
-                  className="pl-10 h-8 text-sm bg-background/50 border-border/50 focus:border-border focus:ring-1 focus:ring-ring"
+                  className="pl-10 h-8 text-sm bg-background/50 border-border/50"
                   id="query"
                   ref={queryRef}
                 />
               </div>
 
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   deselect()
                   setShowSettings(true)
                 }}
-                className="h-8 w-8 p-0 rounded border border-border/50 hover:bg-accent/30 flex items-center justify-center"
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8"
                 title="Settings"
               >
                 <SettingsIcon className="h-4 w-4 text-muted-foreground" />
-              </button>
+              </Button>
             </div>
 
             <div className="flex-1 overflow-hidden">
@@ -394,12 +402,12 @@ export function ClipboardSidebar() {
       </div>
 
       <div
-        className={`bg-background/95 transition-all duration-300 ease-in-out ${
+        className={`bg-background/95 transition-all duration-300 ${
           page.selectedIndex >= 0 ? 'w-[120ch] opacity-100' : 'w-0 opacity-0 pointer-events-none'
         }`}
       >
         {page.selectedIndex >= 0 && page.items[page.selectedIndex] && (
-          <SnippetDetail
+          <ExpandedSnippetView
             snippet={page.items[page.selectedIndex]}
             onCopy={onCopy}
             onClose={deselect}

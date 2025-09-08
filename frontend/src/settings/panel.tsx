@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { X, Trash2, Palette, Keyboard } from 'lucide-react'
+import { Button } from '../components/ui/button'
 import { ListStyles, SetSyntaxStyle, SetRetentionDays, SetToggleHotkey, SetBgColors, SetFontSize } from '../../bindings/zettl/service'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
 import { Input } from '../components/ui/input'
-import { ShortcutInput } from '../sidebar/shortcut-input'
+import { ShortcutInput } from './shortcut-input'
 import { ColorInput } from './color-input'
 import type { UISettings } from '../../bindings/zettl/pkg/models'
 
@@ -29,13 +30,15 @@ export function SettingsPanel({
     <div className="w-full h-full flex flex-col">
       <div className="p-4 border-b border-border/30 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Settings</h2>
-        <button
-          className="h-8 w-8 p-0 rounded border border-border/50 hover:bg-accent/30 flex items-center justify-center"
+        <Button
+          className="h-8 w-8"
+          size="icon"
+          variant="secondary"
           onClick={onClose}
           title="Close settings"
         >
           <X className="h-4 w-4 text-muted-foreground" />
-        </button>
+        </Button>
       </div>
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-6">

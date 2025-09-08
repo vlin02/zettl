@@ -3,7 +3,6 @@ package pkg
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 
 	hotkey "golang.design/x/hotkey"
 )
@@ -92,7 +91,7 @@ func GetUISettings(db *sql.DB) UISettings {
 	out.LightBgColor = lightBg
 	out.DarkBgColor = darkBg
 	out.FontSize = fontSize
-	fmt.Println("done")
+
 	return out
 }
 

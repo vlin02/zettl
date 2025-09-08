@@ -20,41 +20,42 @@ type Service struct {
 	db     *sql.DB
 	hk     *hotkey.Hotkey
 	hkStop chan struct{}
+	app    *application.App
 }
 
-func (g *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
+func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
 	fmt.Println("ServiceStartup called")
-	g.ctx = ctx
+	s.ctx = ctx
 
 	env := pkg.GlobalEnv
 	dataDir := pkg.GetDataDir(env)
 	dbPath := fmt.Sprintf("%s/zettl.db", dataDir)
-	g.db = pkg.OpenDB(dbPath)
+	s.db = pkg.OpenDB(dbPath)
 
 	app := application.Get()
+	s.app = app
 	w := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:       "Window 1",
-		Frameless:   true,
-		AlwaysOnTop: true,
+		Title:            "Zettl",
+		Frameless:        true,
+		AlwaysOnTop:      true,
+		DisableResize:    true,
+		BackgroundType:   application.BackgroundTypeTransparent,
+		BackgroundColour: application.RGBA{Red: 0, Green: 0, Blue: 0, Alpha: 0},
 		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 50,
-			Backdrop:                application.MacBackdropTranslucent,
-			TitleBar:                application.MacTitleBarHiddenInset,
-			Panel:                   true,
+			Backdrop: application.MacBackdropTransparent,
+			TitleBar: application.MacTitleBarHiddenInset,
+			Panel:    true,
 		},
 		URL: "/",
 	})
-	g.window = w
+	s.window = w
 
-	app.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, func(_ *application.ApplicationEvent) { show(w) })
-	app.Event.OnApplicationEvent(events.Mac.ApplicationDidResignActive, func(_ *application.ApplicationEvent) {
-		if w.IsVisible() {
-			w.Hide()
-		}
+	app.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, func(_ *application.ApplicationEvent) {
+		s.show()
 	})
 
 	go func() {
-		g.registerHotkeys()
+		s.registerHotkeys()
 	}()
 
 	return nil
@@ -64,7 +65,7 @@ func (s *Service) ServiceName() string {
 	return "Zettl"
 }
 
-func show(win application.Window) {
+func (s *Service) show() {
 	mx, my := robotgo.Location()
 	n := robotgo.DisplaysNum()
 	did := 0
@@ -82,10 +83,11 @@ func show(win application.Window) {
 		y += 25
 		h -= 25
 	}
-	w, _ := win.Size()
-	win.SetSize(w, h)
-	win.SetPosition(r.X, y)
-	win.Show()
+	curW, _ := s.window.Size()
+	s.window.SetSize(curW, h)
+	s.app.Event.Emit("windowHeight", h)
+	s.window.SetPosition(r.X, y)
+	s.window.Show()
 }
 
 func (s *Service) FindSnippets(q string, before int64, limit int) []pkg.SnippetPreview {
@@ -174,7 +176,7 @@ func (s *Service) registerHotkeys() {
 				if w.IsVisible() {
 					w.Hide()
 				} else {
-					show(w)
+					s.show()
 				}
 			}
 		}
