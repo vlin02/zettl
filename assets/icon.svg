@@ -1,0 +1,50 @@
+<svg
+  viewBox="0 0 600 600"
+  fill="none"
+  stroke-linecap="square"
+  stroke-miterlimit="10"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <clipPath id="a"><path d="M0 0h600v600H0z" /></clipPath>
+  <g clip-path="url(#a)">
+    <path d="M0 0h600v600H0z" />
+    <path
+      fill="#fff"
+      d="M-.02 300.01c0-165.68 134.32-300 300-300a300 300 0 0 1 300 300c0 165.69-134.31 300-300 300s-300-134.31-300-300"
+      fill-rule="evenodd"
+    />
+    <path
+      fill="#44403c"
+      d="m299.93 87.8 141.52 141.52-141.42 141.41-141.51-141.5z"
+      fill-rule="evenodd"
+    />
+    <path
+      fill="#57534e"
+      d="M300.07 512.2 158.55 370.69l141.42-141.42 141.51 141.51z"
+      fill-rule="evenodd"
+    />
+    <g filter="url(#b)"><use transform="translate(0 2)" href="#c" /></g>
+    <defs>
+      <filter id="b" filterUnits="userSpaceOnUse">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur" />
+        <feComponentTransfer in="blur" color-interpolation-filters="sRGB">
+          <feFuncR type="linear" slope="0" />
+          <feFuncG type="linear" slope="0" />
+          <feFuncB type="linear" slope="0" />
+          <feFuncA type="linear" slope=".5" />
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <path
+      fill="#292524"
+      d="M300.02 370.74 229.28 300 300 229.29l70.74 70.74z"
+      fill-rule="evenodd"
+      id="c"
+    />
+    <path
+      fill="#d6d3d1"
+      d="m300 512.18-70.74-70.74 70.7-70.7 70.75 70.73z"
+      fill-rule="evenodd"
+    />
+  </g>
+</svg>

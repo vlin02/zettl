@@ -1,8 +1,9 @@
-node_modules
-dist
-tmp
-data
-bin
-.vscode
 .DS_Store
+.task
+.vscode
+bin
 build
+data
+dist
+node_modules
+tmp
