@@ -19,7 +19,7 @@ const arrowDirection = (key: string): 'up' | 'down' | null =>
 const SCROLL_DELAY = 150
 const SCROLL_INTERVAL = 20
 
-export function ClipboardSidebar() {
+export function Sidebar() {
   const [page, setPage] = useState<{
     query: string
     items: SnippetPreview[]
@@ -181,12 +181,6 @@ export function ClipboardSidebar() {
     setPage(prev =>
       prev ? { ...prev, query: newQuery } : { query: newQuery, items: [], selectedIndex: -1 },
     )
-
-    if (newQuery.length > 0 && newQuery.length < 3) {
-      setPage(prev => (prev ? { ...prev, items: [], selectedIndex: -1 } : null))
-      pageLockId.current = 0
-      return
-    }
 
     const rows = (await FindSnippets(newQuery, 0, 100)) || []
     if (pageLockId.current === currentLockId) {

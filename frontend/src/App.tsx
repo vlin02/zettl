@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ClipboardSidebar } from './snippet/sidebar'
+import { Sidebar } from './snippet/sidebar'
 import { Window, Events } from '@wailsio/runtime'
 import { ThemeProvider } from 'next-themes'
 
@@ -49,7 +49,7 @@ function App() {
     <ThemeProvider attribute="class" enableSystem>
       <div className="overflow-x-hidden">
         <div className="h-screen w-fit" ref={rootRef}>
-          <ClipboardSidebar key={sidebarKey} />
+          <Sidebar key={sidebarKey} />
         </div>
       </div>
     </ThemeProvider>
