@@ -1,38 +1,40 @@
+//go:build darwin
+
 package pkg
 
-import (
-	robotgo "github.com/go-vgo/robotgo"
-)
+/*
+#cgo CFLAGS: -x objective-c -mmacosx-version-min=10.13
+#cgo LDFLAGS: -framework Cocoa -framework AppKit
+#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
-type Rect struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-	W int `json:"w"`
-	H int `json:"h"`
+CGFloat zMonScale(int idx) {
+	NSArray<NSScreen*> *screens = [NSScreen screens];
+	if(idx < 0 || idx >= (int)screens.count) return 1.0;
+	return screens[idx].backingScaleFactor;
 }
-
-func GetCurrentDisplayId() int {
-	mouseX, mouseY := robotgo.Location()
-	numDisplays := robotgo.DisplaysNum()
-	for i := range numDisplays {
-		x, y, w, h := robotgo.GetDisplayBounds(i)
-		if mouseX >= x && mouseX < x+w && mouseY >= y && mouseY < y+h {
-			return i
-		}
-	}
-	return 0
+CGFloat zMenubarThickness() {
+	return [NSStatusBar systemStatusBar].thickness;
 }
+int zIsPrimary(int idx) {
+	NSArray<NSScreen*> *screens = [NSScreen screens];
+	if(idx < 0 || idx >= (int)screens.count) return 0;
+	NSScreen *main = [NSScreen mainScreen];
+	return screens[idx] == main ? 1 : 0;
+}
+*/
+import "C"
 
-func GetCurrentScreenRect() Rect {
-	displayId := GetCurrentDisplayId()
-	rect := robotgo.GetScreenRect(displayId)
-	y := rect.Y
-	h := rect.H
-
-	if displayId == 0 {
-		y += 25
-		h -= 25
+// MenuBarShiftPhysical returns the vertical pixel shift needed to place a window below the menubar.
+// Returns 0 for non-primary displays or if unavailable.
+func MenuBarShiftPhysical(index int) int {
+	if C.zIsPrimary(C.int(index)) != 1 {
+		return 0
 	}
-
-	return Rect{X: rect.X, Y: y, W: rect.W, H: h}
+	mbDip := float64(C.zMenubarThickness())
+	scale := float64(C.zMonScale(C.int(index)))
+	if scale == 0 {
+		scale = 1
+	}
+	return int(mbDip*scale + 0.5)
 }

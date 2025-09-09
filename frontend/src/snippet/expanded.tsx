@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SnippetPreview, SnippetDetail } from '../../bindings/zettl/pkg/models'
 import { GetSnippetDetail } from '../../bindings/zettl/service'
 
-export function ExpandedSnippetView({
+export function ExpandedView({
   snippet,
   onCopy,
   onClose,
@@ -41,7 +41,7 @@ export function ExpandedSnippetView({
   const ts = new Date(detail.copied_at * 1000)
 
   return (
-    <div className="h-full border-l border-border/30 backdrop-blur-sm overflow-hidden">
+    <div className="h-full border-l border-border/30">
       <div className="p-6 flex flex-col h-full">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">

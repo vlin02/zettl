@@ -1,9 +1,20 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { Button } from '../components/ui/button'
-import { ListStyles, SetSyntaxStyle, SetRetentionDays, SetToggleHotkey, SetFontSize } from '../../bindings/zettl/service'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
-import { Input } from '../components/ui/input'
+import {
+  ListStyles,
+  SetSyntaxStyle,
+  SetRetentionDays,
+  SetToggleHotkey,
+  SetFontSize,
+} from '../../bindings/zettl/service'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
 import { NumberInput } from '../components/ui/number-input'
 import { ShortcutInput } from './shortcut-input'
 import type { UISettings } from '../../bindings/zettl/pkg/models'
@@ -28,7 +39,7 @@ export function SettingsPanel({
 
   return (
     <div className="w-full h-full flex flex-col">
-  <div className="p-4 flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Settings</h2>
         <Button
           className="h-8 w-8"

@@ -140,19 +140,13 @@ export class Style {
  * UI-friendly settings for frontend: simplified shape
  */
 export class UISettings {
-    "theme": string;
     "style": Style;
     "toggle_hotkey": HotkeyEvent;
     "retention_days": number;
-    "light_bg_color": string;
-    "dark_bg_color": string;
     "font_size": number;
 
     /** Creates a new UISettings instance. */
     constructor($$source: Partial<UISettings> = {}) {
-        if (!("theme" in $$source)) {
-            this["theme"] = "";
-        }
         if (!("style" in $$source)) {
             this["style"] = (new Style());
         }
@@ -161,12 +155,6 @@ export class UISettings {
         }
         if (!("retention_days" in $$source)) {
             this["retention_days"] = 0;
-        }
-        if (!("light_bg_color" in $$source)) {
-            this["light_bg_color"] = "";
-        }
-        if (!("dark_bg_color" in $$source)) {
-            this["dark_bg_color"] = "";
         }
         if (!("font_size" in $$source)) {
             this["font_size"] = 0;
@@ -179,14 +167,14 @@ export class UISettings {
      * Creates a new UISettings instance from a string or object.
      */
     static createFrom($$source: any = {}): UISettings {
-        const $$createField1_0 = $$createType1;
-        const $$createField2_0 = $$createType2;
+        const $$createField0_0 = $$createType1;
+        const $$createField1_0 = $$createType2;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("style" in $$parsedSource) {
-            $$parsedSource["style"] = $$createField1_0($$parsedSource["style"]);
+            $$parsedSource["style"] = $$createField0_0($$parsedSource["style"]);
         }
         if ("toggle_hotkey" in $$parsedSource) {
-            $$parsedSource["toggle_hotkey"] = $$createField2_0($$parsedSource["toggle_hotkey"]);
+            $$parsedSource["toggle_hotkey"] = $$createField1_0($$parsedSource["toggle_hotkey"]);
         }
         return new UISettings($$parsedSource as Partial<UISettings>);
     }

@@ -41,10 +41,6 @@ export function PurgeExpired(): $CancellablePromise<void> {
     return $Call.ByID(1375670581);
 }
 
-export function SetBgColors(lightColor: string, darkColor: string): $CancellablePromise<void> {
-    return $Call.ByID(682525312, lightColor, darkColor);
-}
-
 export function SetFontSize(size: number): $CancellablePromise<void> {
     return $Call.ByID(3659923651, size);
 }
@@ -59,10 +55,6 @@ export function SetSyntaxStyle(style: string): $CancellablePromise<void> {
 
 export function SetToggleHotkey(ev: pkg$0.HotkeyEvent): $CancellablePromise<void> {
     return $Call.ByID(869068813, ev);
-}
-
-export function SetUITheme(theme: string): $CancellablePromise<void> {
-    return $Call.ByID(3877977206, theme);
 }
 
 // Private type creation functions

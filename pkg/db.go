@@ -53,11 +53,8 @@ func Init(db *sql.DB) {
 		DROP TABLE IF EXISTS settings;
 		CREATE TABLE settings (
 			retention_days INTEGER NOT NULL,
-			theme TEXT NOT NULL,
 			style TEXT NOT NULL,
 			toggle_hotkey TEXT NOT NULL,
-			light_bg_color TEXT NOT NULL,
-			dark_bg_color TEXT NOT NULL,
 			font_size INTEGER NOT NULL DEFAULT 14
 		);
 	`)

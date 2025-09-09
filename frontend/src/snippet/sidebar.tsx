@@ -4,24 +4,19 @@ import { Input } from '../components/ui/input.tsx'
 import { Clipboard, Window } from '@wailsio/runtime'
 import { UISettings, SnippetPreview } from '../../bindings/zettl/pkg/models.ts'
 import { Search } from './language.tsx'
-import { Sun, Moon, Settings as SettingsIcon } from 'lucide-react'
+import { Settings as SettingsIcon } from 'lucide-react'
 import { Button } from '../components/ui/button.tsx'
 import { SnippetItem } from './item.tsx'
 import { SettingsPanel } from '../settings/panel.tsx'
-import { ExpandedSnippetView } from './expanded.tsx'
+import { ExpandedView } from './expanded.tsx'
 import { detect } from '../detect.ts'
 import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized'
-import {
-  AddSnippet,
-  FindSnippets,
-  GetUISettings,
-  SetUITheme,
-} from '../../bindings/zettl/service.ts'
+import { AddSnippet, FindSnippets, GetUISettings } from '../../bindings/zettl/service.ts'
 
 const arrowDirection = (key: string): 'up' | 'down' | null =>
   key === 'ArrowDown' ? 'down' : key === 'ArrowUp' ? 'up' : null
 
-const SCROLL_DELAY = 100
+const SCROLL_DELAY = 150
 const SCROLL_INTERVAL = 20
 
 export function ClipboardSidebar() {
@@ -47,9 +42,7 @@ export function ClipboardSidebar() {
   const loadSettings = async () => {
     const s = await GetUISettings()
 
-    document.documentElement.classList.toggle('dark', s.theme === 'dark')
     setSettings(s)
-
     cache.current.clearAll()
   }
 
@@ -175,7 +168,6 @@ export function ClipboardSidebar() {
 
   useEffect(() => {
     const onVis = () => {
-      console.log('here')
       queryRef.current?.focus()
       queryRef.current?.select()
     }
@@ -217,6 +209,7 @@ export function ClipboardSidebar() {
         lastClip = currentClip
         const lang = await detect(currentClip)
         await AddSnippet(currentClip, lang)
+        console.log('here')
         loadPage('reset')
         Window.Hide()
       }
@@ -291,59 +284,30 @@ export function ClipboardSidebar() {
   }, [page?.selectedIndex, showSettings])
 
   useEffect(() => {
-    if (page && page.selectedIndex >= 0 && listRef.current) {
-      listRef.current.scrollToRow(page.selectedIndex)
+    if (page && page.selectedIndex !== -1) {
+      queryRef.current?.blur()
+      if (listRef.current) listRef.current.scrollToRow(page.selectedIndex)
     }
-  }, [page?.selectedIndex, page?.items])
+  }, [page?.selectedIndex])
 
   if (!settings || !page) return null
 
-  const onToggleTheme = async () => {
-    await SetUITheme(settings.theme === 'dark' ? 'light' : 'dark')
-    await loadSettings()
-  }
-
-  const bgColor = settings.theme === 'light' ? settings.light_bg_color : settings.dark_bg_color
-  const bgStyle = showSettings ? { backgroundColor: bgColor } : { backgroundColor: bgColor + 'F2' } // 95% opacity
-
   return (
-    <div className="h-full backdrop-blur-xl flex overflow-hidden">
+    <div className="h-full flex overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: settings.style.css }} />
-      <div className="w-[60ch] flex flex-col min-h-0 overflow-hidden" style={bgStyle}>
+      <div className="w-[50ch] flex flex-col min-h-0 overflow-hidden">
         {showSettings ? (
-          <SettingsPanel
-            isOpen={showSettings}
-            onClose={() => setShowSettings(false)}
-            settings={settings}
-            onRefetch={loadSettings}
-          />
+          <div className="bg-background h-full">
+            <SettingsPanel
+              isOpen={showSettings}
+              onClose={() => setShowSettings(false)}
+              settings={settings}
+              onRefetch={loadSettings}
+            />
+          </div>
         ) : (
           <>
             <div className="p-3 flex items-center gap-2">
-              <Button
-                type="button"
-                onClick={onToggleTheme}
-                title={`${settings.theme === 'dark' ? 'dark' : 'light'} mode`}
-                variant="secondary"
-                size="icon"
-                className="relative rounded-full overflow-hidden h-8 w-8"
-              >
-                <Sun
-                  className={`absolute h-4 w-4 transition-transform duration-300 ${
-                    settings.theme === 'light'
-                      ? 'opacity-100 scale-100 rotate-0'
-                      : 'opacity-0 scale-0 -rotate-90'
-                  }`}
-                />
-                <Moon
-                  className={`absolute h-4 w-4 transition-transform duration-300 ${
-                    settings.theme === 'dark'
-                      ? 'opacity-100 scale-100 rotate-0'
-                      : 'opacity-0 scale-0 rotate-90'
-                  }`}
-                />
-              </Button>
-
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -352,6 +316,9 @@ export function ClipboardSidebar() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     handleQueryChange(e.target.value)
                   }
+                  onFocus={() => {
+                    if (page.selectedIndex >= 0) deselect()
+                  }}
                   className="pl-10 h-8 text-sm bg-background/50 border-border/50"
                   id="zettl-focus-input"
                   ref={queryRef}
@@ -372,10 +339,9 @@ export function ClipboardSidebar() {
                 <SettingsIcon className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>
-
             <div className="flex-1 overflow-hidden">
               {page.items.length > 0 ? (
-                <div className="h-full pt-2">
+                <div className="h-full">
                   <AutoSizer>
                     {({ height, width }) => (
                       <List
@@ -410,12 +376,12 @@ export function ClipboardSidebar() {
       </div>
 
       <div
-        className={`bg-background/95 transition-all duration-300 ${
-          page.selectedIndex >= 0 ? 'w-[120ch] opacity-100' : 'w-0 opacity-0 pointer-events-none'
+        className={`bg-background transition-all duration-300 ${
+          page.selectedIndex >= 0 ? 'w-[80ch] opacity-100' : 'w-0 opacity-0 pointer-events-none'
         }`}
       >
         {page.selectedIndex >= 0 && page.items[page.selectedIndex] && (
-          <ExpandedSnippetView
+          <ExpandedView
             snippet={page.items[page.selectedIndex]}
             onCopy={onCopy}
             onClose={deselect}
