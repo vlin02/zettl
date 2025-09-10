@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 	"zettl/pkg"
+	"sync"
 
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/go-vgo/robotgo"
@@ -21,11 +22,13 @@ type Service struct {
 	hk     *hotkey.Hotkey
 	hkStop chan struct{}
 	app    *application.App
+	readyCh chan struct{}
+	readyOnce sync.Once
 }
 
 func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
-	fmt.Println("ServiceStartup called")
 	s.ctx = ctx
+	s.readyCh = make(chan struct{})
 
 	env := pkg.GlobalEnv
 	dataDir := pkg.GetDataDir(env)
@@ -39,6 +42,7 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 		Frameless:     true,
 		AlwaysOnTop:   true,
 		DisableResize: true,
+		Hidden:        true,
 		Mac: application.MacWindow{
 			Appearance:    application.DefaultAppearance,
 			DisableShadow: true,
@@ -66,6 +70,7 @@ func (s *Service) ServiceName() string {
 }
 
 func (s *Service) show() {
+	<-s.readyCh
 	mx, my := robotgo.Location()
 	n := robotgo.DisplaysNum()
 	did := 0
@@ -84,16 +89,21 @@ func (s *Service) show() {
 		y += shift
 		h -= shift
 	}
-	curW, _ := s.window.Size()
+
+	w, _ := s.window.Size()
 
 	go func() {
-		s.window.SetSize(curW, h)
-		s.app.Event.Emit("windowHeight", h)
+		s.window.SetSize(w, h)
 		s.window.SetPosition(-10000, -10000)
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		s.window.SetPosition(r.X, y)
 		s.window.Show().Focus()
 	}()
+}
+
+// FrontendReady is called by the frontend once it's initialised and has set width at least once.
+func (s *Service) FrontendReady() {
+	s.readyOnce.Do(func() { close(s.readyCh) })
 }
 
 func (s *Service) FindSnippets(q string, before int64, limit int) []pkg.SnippetPreview {
@@ -106,6 +116,11 @@ func (s *Service) GetUISettings() pkg.UISettings {
 
 func (s *Service) SetSyntaxStyle(style string) {
 	pkg.SetSyntaxStyle(s.db, style)
+}
+
+func (s *Service) SetWidth(w int) {
+	_, h := s.window.Size()
+	s.window.SetSize(w, h)
 }
 
 func (s *Service) SetRetentionDays(days int) {

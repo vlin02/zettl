@@ -11,7 +11,7 @@ require (
 	golang.design/x/hotkey v0.4.1
 )
 
-replace github.com/wailsapp/wails/v3 => ../tmp/wails/v3
+replace github.com/wailsapp/wails/v3 => ../wails/v3
 
 require (
 	dario.cat/mergo v1.0.1 // indirect

@@ -19,6 +19,13 @@ export function FindSnippets(q: string, before: number, limit: number): $Cancell
     });
 }
 
+/**
+ * FrontendReady is called by the frontend once it's initialised and has set width at least once.
+ */
+export function FrontendReady(): $CancellablePromise<void> {
+    return $Call.ByID(141859388);
+}
+
 export function GetSnippetDetail(id: number): $CancellablePromise<pkg$0.SnippetDetail> {
     return $Call.ByID(4198772317, id).then(($result: any) => {
         return $$createType2($result);
@@ -55,6 +62,10 @@ export function SetSyntaxStyle(style: string): $CancellablePromise<void> {
 
 export function SetToggleHotkey(ev: pkg$0.HotkeyEvent): $CancellablePromise<void> {
     return $Call.ByID(869068813, ev);
+}
+
+export function SetWidth(w: number): $CancellablePromise<void> {
+    return $Call.ByID(3917375589, w);
 }
 
 // Private type creation functions

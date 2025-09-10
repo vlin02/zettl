@@ -1,39 +1,32 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sidebar } from './snippet/sidebar'
-import { Window, Events } from '@wailsio/runtime'
 import { ThemeProvider } from 'next-themes'
+import { SetWidth, FrontendReady } from '../bindings/zettl/service'
 
 function App() {
   const rootRef = useRef<HTMLDivElement>(null)
   const [sidebarKey, setSidebarKey] = useState(0)
-
-  const heightRef = useRef(0)
-  const [height, setHeight] = useState(0)
-
-  useEffect(() => {
-    const unsub = Events.On('windowHeight', ev => {
-      const h: number = ev.data[0]
-      if (h !== heightRef.current) {
-        heightRef.current = h
-        setHeight(h)
-      }
-    })
-    return () => unsub()
-  }, [])
+  const widthRef = useRef(0)
+  const readyRef = useRef(false)
 
   useEffect(() => {
     if (!rootRef.current) return
-    let prevW = 0
+
     const ro = new ResizeObserver(entries => {
-      const w = Math.round(entries[0].contentRect.width)
-      if (w !== prevW && heightRef.current) {
-        prevW = w
-        Window.SetSize(w, heightRef.current)
+      widthRef.current = Math.round(entries[0].contentRect.width)
+      SetWidth(widthRef.current)
+      if (!readyRef.current) {
+        setTimeout(() => {
+          readyRef.current = true
+          FrontendReady()
+        }, 100)
       }
     })
+
     ro.observe(rootRef.current)
+
     return () => ro.disconnect()
-  }, [height])
+  }, [sidebarKey])
 
   useEffect(() => {
     const onVisibility = () => {
