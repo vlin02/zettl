@@ -39,7 +39,7 @@ export function SnippetItem({
           setCopied(true)
           setTimeout(() => setCopied(false), 1000)
         }}
-  className={`absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 bg-background/80 hover:bg-background/90 border border-border/50 transition-colors ${
+        className={`absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 bg-background/80 hover:bg-background/90 border border-border/50 transition-colors ${
           copied ? 'bg-success/15 border-success/40 text-success' : ''
         }`}
       >

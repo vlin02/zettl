@@ -30,9 +30,6 @@ type SnippetDetail struct {
 }
 
 func AddSnippet(db *sql.DB, content string, language string, copiedAt int64) int64 {
-	if db == nil {
-		return 0
-	}
 	l := lexers.Get(language)
 	if l == nil {
 		panic(language)
@@ -116,7 +113,7 @@ func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPrevie
 		query string
 		args  []any
 	)
-	q = strings.TrimSpace(q)
+
 	if q != "" {
 		if utf8.RuneCountInString(q) >= 3 {
 			lit := "\"" + strings.ReplaceAll(q, "\"", "\"\"") + "\""
@@ -156,23 +153,23 @@ func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPrevie
 		if err := rows.Scan(&id, &content, &copiedAt, &language, &htmlLinesJSON); err != nil {
 			panic(err)
 		}
-		startLine := 1
+		lineOffset := 0
 		if q != "" {
 			lc := strings.ToLower(content)
 			lq := strings.ToLower(q)
 			if idx := strings.Index(lc, lq); idx >= 0 {
-				startLine = 1 + strings.Count(content[:idx], "\n")
+				lineOffset = strings.Count(content[:idx], "\n")
 			}
 		}
+		
 		var full []string
-		if htmlLinesJSON != "" {
-			if err := json.Unmarshal([]byte(htmlLinesJSON), &full); err != nil {
-				panic(err)
-			}
+		if err := json.Unmarshal([]byte(htmlLinesJSON), &full); err != nil {
+			panic(err)
 		}
+
 		var previewHTML []string
 		if len(full) > 0 {
-			si := min(max(0, startLine-1), len(full))
+			si := min(max(0, lineOffset), len(full))
 			ei := min(si+5, len(full))
 			previewHTML = full[si:ei]
 		}

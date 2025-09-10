@@ -76,10 +76,11 @@ export function Sidebar() {
 
     const currentLockId = ++pageLockId.current
     const query = page?.query || ''
+    
     const before =
       mode === 'append' && page?.items.length ? page.items[page.items.length - 1].id : 0
 
-    const rows = (await FindSnippets('a', before, 100)) || []
+    const rows = (await FindSnippets(query, before, 100)) || []
 
     if (pageLockId.current !== currentLockId) return
 

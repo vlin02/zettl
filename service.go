@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 	"zettl/pkg"
-	"sync"
 
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/go-vgo/robotgo"
@@ -16,13 +16,13 @@ import (
 )
 
 type Service struct {
-	ctx    context.Context
-	window application.Window
-	db     *sql.DB
-	hk     *hotkey.Hotkey
-	hkStop chan struct{}
-	app    *application.App
-	readyCh chan struct{}
+	ctx       context.Context
+	window    application.Window
+	db        *sql.DB
+	hk        *hotkey.Hotkey
+	hkStop    chan struct{}
+	app       *application.App
+	readyCh   chan struct{}
 	readyOnce sync.Once
 }
 

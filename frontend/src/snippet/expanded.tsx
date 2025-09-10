@@ -37,7 +37,6 @@ export function ExpandedView({
 
   if (!detail) return null
 
-  const type = detail.language ? 'code' : 'text'
   const ts = new Date(detail.copied_at * 1000)
 
   return (
@@ -45,19 +44,12 @@ export function ExpandedView({
       <div className="p-6 flex flex-col h-full">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            {getTypeIcon(type, detail.language)}
-            <span className="text-sm font-semibold">{detail.language}</span>
+            <div className="text-xs text-muted-foreground flex items-center gap-2">
+              <Clock className="h-3 w-3" />
+              {ts.toLocaleString()}
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={onClose}
-              title="Close"
-              variant="secondary"
-              size="icon"
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
             <Button
               onClick={() => onCopy(detail.content)}
               title="Copy"
@@ -68,17 +60,13 @@ export function ExpandedView({
             </Button>
           </div>
         </div>
-        <div className="text-xs text-muted-foreground mb-4 flex items-center gap-2">
-          <Clock className="h-3 w-3" />
-          {ts.toLocaleString()}
-        </div>
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div
             className={'p-4 rounded-lg border border-border/30 chroma bg-muted/30 dark:bg-card/60'}
           >
             <div className="overflow-x-auto">
               <div
-                className="font-mono leading-relaxed text-foreground/80 whitespace-pre w-[120ch]"
+                className="font-mono leading-relaxed text-foreground/80 whitespace-pre"
                 style={{ fontSize: `${fontSize}px` }}
                 dangerouslySetInnerHTML={{ __html: detail.html }}
               />
