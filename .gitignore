@@ -2,9 +2,7 @@
 .task
 .vscode
 bin
-build
 data
 dist
 node_modules
-tmp
 *.provisionprofile

@@ -306,7 +306,7 @@ export function Sidebar() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search snippets..."
+                  placeholder="Search..."
                   value={page.query}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     handleQueryChange(e.target.value)

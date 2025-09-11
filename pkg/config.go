@@ -21,7 +21,6 @@ func GetDataDir(env string) string {
 		}
 		return filepath.Join(wd, "data")
 	} else {
-		home, _ := os.UserHomeDir()
-		return filepath.Join(home, "Library", "Application Support", "Zettl")
+		return filepath.Join("Library", "Application Support", "Zettl")
 	}
 }

@@ -98,7 +98,7 @@ func Reset(db *sql.DB) error {
 		return err
 	}
 	pkg.Init(db)
-	pkg.EnsureSettings(db)
+	pkg.BootstrapDB(db)
 	return nil
 }
 
@@ -161,5 +161,17 @@ func main() {
 		}
 	case "migrate":
 		pkg.MigrateUp(db, "migrations")
+	case "delete":
+		db.Close()
+		if err := os.Remove(dbPath); err != nil {
+			panic(err)
+		}
+		if err := os.Remove(dbPath + "-shm"); err != nil && !os.IsNotExist(err) {
+			panic(err)
+		}
+		if err := os.Remove(dbPath + "-wal"); err != nil && !os.IsNotExist(err) {
+			panic(err)
+		}
+		fmt.Println("Database deleted.")
 	}
 }

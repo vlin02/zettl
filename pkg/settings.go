@@ -7,10 +7,7 @@ import (
 	hotkey "golang.design/x/hotkey"
 )
 
-func EnsureSettings(db *sql.DB) {
-	if db == nil {
-		return
-	}
+func BootstrapDB(db *sql.DB) {
 	obj := struct {
 		Mods []uint32 `json:"mods"`
 		Key  uint32   `json:"key"`
@@ -34,9 +31,6 @@ type Settings struct {
 }
 
 func GetSettings(db *sql.DB) Settings {
-	if db == nil {
-		return Settings{RetentionDays: 30, Style: "onedark"}
-	}
 	row := db.QueryRow("SELECT retention_days, style, toggle_hotkey FROM settings LIMIT 1")
 	var days int
 	var style, toggle string

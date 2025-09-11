@@ -35,6 +35,9 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 	dbPath := fmt.Sprintf("%s/zettl.db", dataDir)
 	s.db = pkg.OpenDB(dbPath)
 
+	pkg.MigrateUp(s.db, "migrations")
+	pkg.BootstrapDB(s.db)
+
 	app := application.Get()
 	s.app = app
 	w := app.Window.NewWithOptions(application.WebviewWindowOptions{
