@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { HotkeyEvent } from '../../bindings/zettl/pkg/models'
 
@@ -15,6 +15,7 @@ const MODIFIER_MAP: Record<string, string> = {
   Meta: 'Cmd',
   Control: 'Ctrl',
   Alt: 'Opt',
+  Shift: 'Shift',
 }
 
 export function formatHotkeyEvent({ modifiers, code }: HotkeyEvent): string {
@@ -51,43 +52,45 @@ export function ShortcutInput({
   onSubmit: (event: HotkeyEvent) => void
 }) {
   const [pending, setPending] = useState<HotkeyEvent | null>(null)
-  const [listening, setListening] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   const onKeyDown = (e: KeyboardEvent) => {
     e.preventDefault()
     const mods = getModifiers(e)
     const isModifierKey = MODIFIER_CODES.includes(e.code)
-    const newShortcut = new HotkeyEvent({ modifiers: mods, code: isModifierKey ? '' : e.code })
+    const newShortcut = new HotkeyEvent({
+      modifiers: mods,
+      code: isModifierKey ? '' : e.code,
+    })
     setPending(newShortcut)
 
     if (!isModifierKey) {
       onSubmit(newShortcut)
-      setPending(null)
-      setListening(false)
     }
   }
 
+  useEffect(() => {
+    setPending(null)
+    buttonRef.current?.blur()
+  }, [event])
+
   const onBlur = () => {
     setPending(null)
-    setListening(false)
   }
 
-  const onFocus = () => setListening(true)
+  const onFocus = () => setPending(new HotkeyEvent())
 
-  const label = listening
-    ? pending
-      ? formatHotkeyEvent(pending)
-      : 'Press shortcut…'
-    : formatHotkeyEvent(event)
+  const label = pending ? formatHotkeyEvent(pending) || 'Press shortcut…' : formatHotkeyEvent(event)
 
   return (
     <button
+      ref={buttonRef}
       onKeyDown={onKeyDown}
       onBlur={onBlur}
       onFocus={onFocus}
       tabIndex={0}
       className={`h-8 px-3 rounded text-sm border w-40 text-left ${
-        listening ? 'bg-background/50 border-foreground' : 'bg-transparent border-input'
+        pending ? 'bg-background/50 border-foreground' : 'bg-transparent border-input'
       }`}
     >
       {label}
