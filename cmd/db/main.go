@@ -105,12 +105,14 @@ func Reset(db *sql.DB) error {
 func main() {
 	os.MkdirAll("data", 0755)
 	env := "development"
+
 	if len(os.Args) > 1 && os.Args[1] == "--prod" {
 		env = "production"
 		os.Args = append(os.Args[:1], os.Args[2:]...)
 	}
 	dataDir := pkg.GetDataDir(env)
 	dbPath := filepath.Join(dataDir, "zettl.db")
+	fmt.Println("Using database:", dbPath)
 	db := pkg.OpenDB(dbPath)
 	defer db.Close()
 	if len(os.Args) < 2 {
