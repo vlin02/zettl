@@ -73,7 +73,7 @@ tasks:
       - task: create:app:bundle
       - cp ./build/darwin/embedded.provisionprofile "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/embedded.provisionprofile"
       - codesign --timestamp --options=runtime -s "{{.APP_CERTIFICATE}}" -v --entitlements ./build/darwin/entitlements.plist "{{.BIN_DIR}}/{{.APP_NAME}}.app"
-      - productbuild --sign "{{.PKG_CERTIFICATE}}" --component "{{.BIN_DIR}}/{{.APP_NAME}}.app" /Applications "./{{.APP_NAME}}.pkg"
+      - productbuild --sign "{{.PKG_CERTIFICATE}}" --component "{{.BIN_DIR}}/{{.APP_NAME}}.app" /Applications "{{.BIN_DIR}}/{{.APP_NAME}}.pkg"
 
   create:app:bundle:
     summary: Creates an unsigned `.app` bundle structure
