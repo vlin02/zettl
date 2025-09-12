@@ -13,15 +13,16 @@ export function AddSnippet(content: string, language: string): $CancellablePromi
     return $Call.ByID(124315977, content, language);
 }
 
+export function AppendLog(msg: string): $CancellablePromise<void> {
+    return $Call.ByID(336368141, msg);
+}
+
 export function FindSnippets(q: string, before: number, limit: number): $CancellablePromise<pkg$0.SnippetPreview[]> {
     return $Call.ByID(1291141136, q, before, limit).then(($result: any) => {
         return $$createType1($result);
     });
 }
 
-/**
- * FrontendReady is called by the frontend once it's initialised and has set width at least once.
- */
 export function FrontendReady(): $CancellablePromise<void> {
     return $Call.ByID(141859388);
 }

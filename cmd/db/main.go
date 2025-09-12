@@ -13,6 +13,8 @@ import (
 
 	pkg "zettl/pkg"
 
+	"github.com/spf13/cobra"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -102,78 +104,151 @@ func Reset(db *sql.DB) error {
 	return nil
 }
 
+var prod bool
+
 func main() {
 	os.MkdirAll("data", 0755)
-	env := "development"
 
-	if len(os.Args) > 1 && os.Args[1] == "--prod" {
+	var rootCmd = &cobra.Command{
+		Use:   "db",
+		Short: "Database management tool for Zettl",
+	}
+
+	rootCmd.PersistentFlags().BoolVar(&prod, "prod", false, "Use production environment")
+
+	var settingsCmd = &cobra.Command{
+		Use:   "settings",
+		Short: "Show current settings",
+		Run: func(cmd *cobra.Command, args []string) {
+			db := getDB()
+			defer db.Close()
+			s := pkg.GetUISettings(db)
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetEscapeHTML(false)
+			if err := enc.Encode(s); err != nil {
+				panic(err)
+			}
+		},
+	}
+
+	var resetCmd = &cobra.Command{
+		Use:   "reset",
+		Short: "Reset the database",
+		Run: func(cmd *cobra.Command, args []string) {
+			db := getDB()
+			defer db.Close()
+			if err := Reset(db); err != nil {
+				panic(err)
+			}
+		},
+	}
+
+	var seedCmd = &cobra.Command{
+		Use:   "seed [n]",
+		Short: "Seed database with sample data",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			db := getDB()
+			defer db.Close()
+			n := 0
+			if len(args) > 0 {
+				if x, e := strconv.Atoi(args[0]); e == nil {
+					n = x
+				}
+			}
+			if err := Seed(db, n); err != nil {
+				panic(err)
+			}
+		},
+	}
+
+	var dumpCmd = &cobra.Command{
+		Use:   "dump [n]",
+		Short: "Dump snippets from database",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			db := getDB()
+			defer db.Close()
+			n := 10
+			if len(args) > 0 {
+				if x, e := strconv.Atoi(args[0]); e == nil {
+					n = x
+				}
+			}
+			if err := Dump(db, n); err != nil {
+				panic(err)
+			}
+		},
+	}
+
+	var searchCmd = &cobra.Command{
+		Use:   "search <query>",
+		Short: "Search snippets",
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			db := getDB()
+			defer db.Close()
+			q := strings.Join(args, " ")
+			res := pkg.FindSnippets(db, q, 0, 50)
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetEscapeHTML(false)
+			if err := enc.Encode(res); err != nil {
+				panic(err)
+			}
+		},
+	}
+
+	var migrateCmd = &cobra.Command{
+		Use:   "migrate",
+		Short: "Run database migrations",
+		Run: func(cmd *cobra.Command, args []string) {
+			db := getDB()
+			defer db.Close()
+			pkg.MigrateUp(db, "migrations")
+		},
+	}
+
+	var deleteCmd = &cobra.Command{
+		Use:   "delete",
+		Short: "Delete the database",
+		Run: func(cmd *cobra.Command, args []string) {
+			db := getDB()
+			defer db.Close()
+			db.Close()
+			env := "production"
+			if prod {
+				env = "production"
+			}
+			dataDir := pkg.GetDataDir(env)
+			dbPath := filepath.Join(dataDir, "zettl.db")
+			if err := os.Remove(dbPath); err != nil {
+				panic(err)
+			}
+			if err := os.Remove(dbPath + "-shm"); err != nil && !os.IsNotExist(err) {
+				panic(err)
+			}
+			if err := os.Remove(dbPath + "-wal"); err != nil && !os.IsNotExist(err) {
+				panic(err)
+			}
+			fmt.Println("Database deleted.")
+		},
+	}
+
+	rootCmd.AddCommand(settingsCmd, resetCmd, seedCmd, dumpCmd, searchCmd, migrateCmd, deleteCmd)
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func getDB() *sql.DB {
+	env := "development"
+	if prod {
 		env = "production"
-		os.Args = append(os.Args[:1], os.Args[2:]...)
 	}
 	dataDir := pkg.GetDataDir(env)
 	dbPath := filepath.Join(dataDir, "zettl.db")
-	fmt.Println("Using database:", dbPath)
-	db := pkg.OpenDB(dbPath)
-	defer db.Close()
-	if len(os.Args) < 2 {
-		return
-	}
-	switch os.Args[1] {
-	case "settings":
-		s := pkg.GetUISettings(db)
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetEscapeHTML(false)
-		if err := enc.Encode(s); err != nil {
-			panic(err)
-		}
-	case "reset":
-		if err := Reset(db); err != nil {
-			panic(err)
-		}
-	case "seed":
-		n := 0
-		if len(os.Args) > 2 {
-			if x, e := strconv.Atoi(os.Args[2]); e == nil {
-				n = x
-			}
-		}
-		if err := Seed(db, n); err != nil {
-			panic(err)
-		}
-	case "dump":
-		n := 10
-		if len(os.Args) > 2 {
-			if x, e := strconv.Atoi(os.Args[2]); e == nil {
-				n = x
-			}
-		}
-		if err := Dump(db, n); err != nil {
-			panic(err)
-		}
-	case "search":
-		q := ""
-		if len(os.Args) > 2 {
-			q = strings.Join(os.Args[2:], " ")
-		}
-		res := pkg.FindSnippets(db, q, 0, 50)
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetEscapeHTML(false)
-		if err := enc.Encode(res); err != nil {
-			panic(err)
-		}
-	case "migrate":
-		pkg.MigrateUp(db, "migrations")
-	case "delete":
-		db.Close()
-		if err := os.Remove(dbPath); err != nil {
-			panic(err)
-		}
-		if err := os.Remove(dbPath + "-shm"); err != nil && !os.IsNotExist(err) {
-			panic(err)
-		}
-		if err := os.Remove(dbPath + "-wal"); err != nil && !os.IsNotExist(err) {
-			panic(err)
-		}
-		fmt.Println("Database deleted.")
-	}
+
+	return pkg.OpenDB(dbPath)
 }

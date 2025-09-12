@@ -7,6 +7,7 @@ require (
 	github.com/go-vgo/robotgo v0.110.8
 	github.com/golang-migrate/migrate/v4 v4.19.0
 	github.com/mattn/go-sqlite3 v1.14.32
+	github.com/spf13/cobra v1.10.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.25
 	golang.design/x/hotkey v0.4.1
 )
@@ -35,6 +36,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
@@ -58,6 +60,7 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.4 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/tailscale/win v0.0.0-20250213223159-5992cb43ca35 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect

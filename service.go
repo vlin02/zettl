@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 	"zettl/pkg"
@@ -24,6 +25,7 @@ type Service struct {
 	app       *application.App
 	readyCh   chan struct{}
 	readyOnce sync.Once
+	logFile   *os.File
 }
 
 func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
@@ -33,10 +35,16 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 	env := pkg.GlobalEnv
 	dataDir := pkg.GetDataDir(env)
 	dbPath := fmt.Sprintf("%s/zettl.db", dataDir)
-	s.db = pkg.OpenDB(dbPath)
 
+	s.db = pkg.OpenDB(dbPath)
 	pkg.MigrateUp(s.db, "migrations")
 	pkg.BootstrapDB(s.db)
+
+	h, _ := os.UserHomeDir()
+	d := h + "/zettl"
+	os.MkdirAll(d, 0755)
+	lf, _ := os.OpenFile(d+"/log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	s.logFile = lf
 
 	app := application.Get()
 	s.app = app
@@ -50,7 +58,6 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 			Appearance:    application.DefaultAppearance,
 			DisableShadow: true,
 			Backdrop:      application.MacBackdropTranslucent,
-			TitleBar:      application.MacTitleBarHiddenInset,
 			Panel:         true,
 		},
 		URL: "/",
@@ -70,6 +77,12 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 
 func (s *Service) ServiceName() string {
 	return "Zettl"
+}
+
+func (s *Service) AppendLog(msg string) {
+	if s.logFile != nil {
+		s.logFile.WriteString(msg + "\n")
+	}
 }
 
 func (s *Service) show() {
@@ -98,13 +111,11 @@ func (s *Service) show() {
 	go func() {
 		s.window.SetSize(w, h)
 		s.window.SetPosition(-10000, -10000)
-		time.Sleep(50 * time.Millisecond)
 		s.window.SetPosition(r.X, y)
 		s.window.Show().Focus()
 	}()
 }
 
-// FrontendReady is called by the frontend once it's initialised and has set width at least once.
 func (s *Service) FrontendReady() {
 	s.readyOnce.Do(func() { close(s.readyCh) })
 }
@@ -156,9 +167,6 @@ func (s *Service) PurgeExpired() {
 }
 
 func (s *Service) registerHotkeys() {
-	if s.db == nil || s.ctx == nil {
-		return
-	}
 	if s.hk != nil {
 		s.hk.Unregister()
 	}

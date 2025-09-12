@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 includes:
   common: ./build/Taskfile.yml
@@ -9,8 +9,10 @@ includes:
 vars:
   APP_NAME: "zettl"
   BIN_DIR: "bin"
-  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  VITE_PORT: "{{.WAILS_VITE_PORT | default 9245}}"
   TAGS: sqlite_fts5
+  APP_CERTIFICATE: "3rd Party Mac Developer Application: Victor Lin (44UKKXL94E)"
+  PKG_CERTIFICATE: "3rd Party Mac Developer Installer: Victor Lin (44UKKXL94E)"
 
 tasks:
   build:
@@ -28,5 +30,4 @@ tasks:
   dev:
     summary: Dev mode
     cmds:
-      - ZETTL_ENV=development wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
-
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}

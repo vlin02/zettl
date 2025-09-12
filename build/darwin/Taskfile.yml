@@ -37,10 +37,12 @@ tasks:
         vars:
           ARCH: amd64
           OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-amd64"
+          PRODUCTION: "true"
       - task: build
         vars:
           ARCH: arm64
           OUTPUT: "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
+          PRODUCTION: "true"
     cmds:
       - lipo -create -output "{{.BIN_DIR}}/{{.APP_NAME}}" "{{.BIN_DIR}}/{{.APP_NAME}}-amd64" "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
       - rm "{{.BIN_DIR}}/{{.APP_NAME}}-amd64" "{{.BIN_DIR}}/{{.APP_NAME}}-arm64"
@@ -53,25 +55,38 @@ tasks:
           PRODUCTION: "true"
     cmds:
       - task: create:app:bundle
+      - codesign --force --deep --sign - {{.BIN_DIR}}/{{.APP_NAME}}.app
 
   package:universal:
-    summary: Packages darwin universal binary (arm64 + amd64)
+    summary: Packages darwin universal binary (arm64 + amd64) into signed .app bundle
     deps:
       - task: build:universal
     cmds:
       - task: create:app:bundle
+      - codesign --force --deep --sign - {{.BIN_DIR}}/{{.APP_NAME}}.app
 
+  create:pkg:
+    summary: Sign app and build macOS .pkg installer for Mac App Store
+    deps:
+      - task: build:universal
+    cmds:
+      - task: create:app:bundle
+      - cp ./build/darwin/embedded.provisionprofile "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/embedded.provisionprofile"
+      - codesign --timestamp --options=runtime -s "{{.APP_CERTIFICATE}}" -v --entitlements ./build/darwin/entitlements.plist "{{.BIN_DIR}}/{{.APP_NAME}}.app"
+      - productbuild --sign "{{.PKG_CERTIFICATE}}" --component "{{.BIN_DIR}}/{{.APP_NAME}}.app" /Applications "./{{.APP_NAME}}.pkg"
 
   create:app:bundle:
-    summary: Creates an `.app` bundle
+    summary: Creates an unsigned `.app` bundle structure
     cmds:
       - mkdir -p {{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/{MacOS,Resources}
       - cp build/darwin/icons.icns {{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources
       - cp {{.BIN_DIR}}/{{.APP_NAME}} {{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/MacOS
       - cp build/darwin/Info.plist {{.BIN_DIR}}/{{.APP_NAME}}.app/Contents
-      - codesign --force --deep --sign - {{.BIN_DIR}}/{{.APP_NAME}}.app
 
   run:
+    summary: Build and run development version
+    deps:
+      - task: build
     cmds:
       - mkdir -p {{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/{MacOS,Resources}
       - cp build/darwin/icons.icns {{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/Resources
