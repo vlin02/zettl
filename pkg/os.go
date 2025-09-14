@@ -4,9 +4,11 @@ package pkg
 
 /*
 #cgo CFLAGS: -x objective-c -mmacosx-version-min=10.13
-#cgo LDFLAGS: -framework Cocoa -framework AppKit
+#cgo LDFLAGS: -framework Cocoa -framework AppKit -framework ApplicationServices -framework CoreGraphics
 #import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
+#import <ApplicationServices/ApplicationServices.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 typedef struct {
     int x, y, w, h;
@@ -63,6 +65,22 @@ ScreenRect zGetDisplayBounds(int index) {
     };
     return rect;
 }
+
+void zSendCmdV() {
+    CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
+    CGEventRef cmdVDown = CGEventCreateKeyboardEvent(source, 0x09, true);
+    CGEventRef cmdVUp = CGEventCreateKeyboardEvent(source, 0x09, false);
+
+    CGEventSetFlags(cmdVDown, kCGEventFlagMaskCommand);
+    CGEventSetFlags(cmdVUp, kCGEventFlagMaskCommand);
+
+    CGEventPost(kCGHIDEventTap, cmdVDown);
+    CGEventPost(kCGHIDEventTap, cmdVUp);
+
+    CFRelease(cmdVDown);
+    CFRelease(cmdVUp);
+    CFRelease(source);
+}
 */
 import "C"
 
@@ -111,4 +129,9 @@ func GetScreenRect(index int) ScreenRect {
 		W: int(rect.w),
 		H: int(rect.h),
 	}
+}
+
+// Paste sends Cmd+V to the active app
+func Paste() {
+	C.zSendCmdV()
 }

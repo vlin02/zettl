@@ -11,7 +11,7 @@ import { SettingsPanel } from '../settings/panel.tsx'
 import { ExpandedView } from './expanded.tsx'
 import { detect } from '../detect.ts'
 import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized'
-import { AddSnippet, FindSnippets, GetUISettings } from '../../bindings/zettl/service.ts'
+import { AddSnippet, FindSnippets, GetUISettings, Paste } from '../../bindings/zettl/service.ts'
 
 const arrowDirection = (key: string): 'up' | 'down' | null =>
   key === 'ArrowDown' ? 'down' : key === 'ArrowUp' ? 'up' : null
@@ -93,9 +93,12 @@ export function Sidebar() {
     pageLockId.current = 0
   }
 
-  const onCopy = async (text: string) => {
+  const onCopy = async (text: string, paste: boolean = false) => {
     await navigator.clipboard.writeText(text)
-    Window.Hide()
+    await Window.Hide()
+    if (paste) {
+      await Paste(text, true)
+    }
   }
 
   const handleSnippetClick = (index: number) =>
@@ -204,7 +207,6 @@ export function Sidebar() {
         lastClip = currentClip
         const lang = await detect(currentClip)
         await AddSnippet(currentClip, lang)
-        console.log('here')
         loadPage('reset')
         Window.Hide()
       }
@@ -258,15 +260,16 @@ export function Sidebar() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault()
+      
       if (e.key === 'l' && e.metaKey) {
-        e.preventDefault()
         queryRef.current?.focus()
       } else if (e.key === 'Escape') {
-        e.preventDefault()
         Window.Hide()
       } else if (e.key === 'Enter' && page && page.selectedIndex >= 0) {
-        e.preventDefault()
-        onCopy(page.items[page.selectedIndex].content)
+        console.log("here")
+        const { content } = page.items[page.selectedIndex]
+        onCopy(content, e.metaKey)
       }
     }
 
@@ -375,10 +378,7 @@ export function Sidebar() {
         }`}
       >
         {page.selectedIndex >= 0 && page.items[page.selectedIndex] && (
-          <ExpandedView
-            snippet={page.items[page.selectedIndex]}
-            fontSize={settings.font_size}
-          />
+          <ExpandedView snippet={page.items[page.selectedIndex]} fontSize={settings.font_size} />
         )}
       </div>
     </div>

@@ -156,6 +156,10 @@ func (s *Service) AddSnippet(content string, language string) int64 {
 	return pkg.AddSnippet(s.db, content, language, time.Now().Unix())
 }
 
+func (s *Service) Paste(text string, paste bool) {
+	pkg.Paste()
+}
+
 func (s *Service) GetSnippetDetail(id int64) pkg.SnippetDetail {
 	return pkg.GetSnippetDetail(s.db, id)
 }
