@@ -25,6 +25,7 @@ type Search = {
 }
 
 export function Sidebar() {
+  console.log('refreshing')
   const [search, setSearch] = useState<Search | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<UISettings | null>(null)
@@ -42,14 +43,13 @@ export function Sidebar() {
   )
 
   const loadSettings = async () => {
-    const s = await GetUISettings()
+    const settings = await GetUISettings()
 
-    setSettings(s)
+    setSettings(settings)
     cache.current.clearAll()
   }
 
   const loadFirstPage = async (query: string) => {
-    console.log(query)
     const lockId = ++pageLockId.current
     setSearch(prev =>
       prev ? { ...prev, query, selectedIndex: -1 } : { query, snippets: [], selectedIndex: -1 },
@@ -166,16 +166,16 @@ export function Sidebar() {
   useEffect(() => {
     loadSettings()
     loadFirstPage('')
-    queryRef.current?.focus()
   }, [])
 
   useEffect(() => {
-    const onVis = () => {
-      queryRef.current?.focus()
-      queryRef.current?.select()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        queryRef.current?.focus()
+      }
     }
-    document.addEventListener('visibilitychange', onVis)
-    return () => document.removeEventListener('visibilitychange', onVis)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
   useEffect(() => {
@@ -210,7 +210,6 @@ export function Sidebar() {
 
     const onKeyDown = (e: KeyboardEvent) => {
       const s = shortcutToString(fromKeyboardEvent(e))
-      console.log(s)
 
       switch (s) {
         case 'Meta+ArrowUp': {
