@@ -99,7 +99,7 @@ func Reset(db *sql.DB) error {
     `); err != nil {
 		return err
 	}
-	pkg.Init(db)
+	pkg.MigrateUp(db, "migrations")
 	pkg.BootstrapDB(db)
 	return nil
 }

@@ -13,7 +13,7 @@
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-switch": "^1.2.6",
-     "@tensorflow/tfjs-backend-cpu": "^3.21.0",
+    "@tensorflow/tfjs-backend-cpu": "^3.21.0",
     "@tensorflow/tfjs-converter": "^3.21.0",
     "@tensorflow/tfjs-core": "^3.21.0",
     "@wailsio/runtime": "latest",
@@ -23,6 +23,7 @@
     "next-themes": "^0.4.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-number-format": "^5.4.4",
     "react-virtualized": "^9.22.5",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7"

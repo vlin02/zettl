@@ -76,7 +76,7 @@ export function Sidebar() {
 
     const currentLockId = ++pageLockId.current
     const query = page?.query || ''
-    
+
     const before =
       mode === 'append' && page?.items.length ? page.items[page.items.length - 1].id : 0
 
@@ -258,10 +258,9 @@ export function Sidebar() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'l' || e.key === 'L') && e.metaKey) {
+      if (e.key === 'l' && e.metaKey) {
         e.preventDefault()
         queryRef.current?.focus()
-        queryRef.current?.select()
       } else if (e.key === 'Escape') {
         e.preventDefault()
         Window.Hide()
@@ -378,8 +377,6 @@ export function Sidebar() {
         {page.selectedIndex >= 0 && page.items[page.selectedIndex] && (
           <ExpandedView
             snippet={page.items[page.selectedIndex]}
-            onCopy={onCopy}
-            onClose={deselect}
             fontSize={settings.font_size}
           />
         )}

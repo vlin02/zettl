@@ -31,7 +31,7 @@ type Settings struct {
 }
 
 func GetSettings(db *sql.DB) Settings {
-	row := db.QueryRow("SELECT retention_days, style, toggle_hotkey FROM settings LIMIT 1")
+	row := db.QueryRow("SELECT COALESCE(retention_days, 0), style, toggle_hotkey FROM settings LIMIT 1")
 	var days int
 	var style, toggle string
 	if err := row.Scan(&days, &style, &toggle); err != nil {
@@ -53,7 +53,7 @@ func GetSettings(db *sql.DB) Settings {
 }
 
 func GetUISettings(db *sql.DB) UISettings {
-	row := db.QueryRow("SELECT retention_days, style, toggle_hotkey, font_size FROM settings LIMIT 1")
+	row := db.QueryRow("SELECT COALESCE(retention_days, 0), style, toggle_hotkey, font_size FROM settings LIMIT 1")
 	var days, fontSize int
 	var style, toggle string
 	if err := row.Scan(&days, &style, &toggle, &fontSize); err != nil {
@@ -110,7 +110,13 @@ func SetSyntaxStyle(db *sql.DB, style string) {
 }
 
 func SetRetentionDays(db *sql.DB, days int) {
-	if db == nil || days <= 0 {
+	if db == nil {
+		return
+	}
+	if days <= 0 {
+		if _, err := db.Exec("UPDATE settings SET retention_days = 0"); err != nil {
+			panic(err)
+		}
 		return
 	}
 	if _, err := db.Exec("UPDATE settings SET retention_days = ?", days); err != nil {

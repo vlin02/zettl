@@ -10,7 +10,6 @@ import (
 	"zettl/pkg"
 
 	"github.com/alecthomas/chroma/v2/styles"
-	"github.com/go-vgo/robotgo"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 	"golang.design/x/hotkey"
@@ -87,18 +86,17 @@ func (s *Service) AppendLog(msg string) {
 
 func (s *Service) show() {
 	<-s.readyCh
-	mx, my := robotgo.Location()
-	n := robotgo.DisplaysNum()
+	mx, my := pkg.Location()
+	n := pkg.DisplaysNum()
 	did := 0
 	for i := range n {
-		robotgo.GetScreenRect()
-		x, y, w, h := robotgo.GetDisplayBounds(i)
+		x, y, w, h := pkg.GetDisplayBounds(i)
 		if mx >= x && mx < x+w && my >= y && my < y+h {
 			did = i
 			break
 		}
 	}
-	r := robotgo.GetScreenRect(did)
+	r := pkg.GetScreenRect(did)
 	y := r.Y
 	h := r.H
 	if shift := pkg.MenuBarShiftPhysical(did); shift > 0 {

@@ -1,29 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { HotkeyEvent } from '../../bindings/zettl/pkg/models'
-
-function codeToDisplayName(code: string): string {
-  if (code === 'Space') return 'Space'
-  if (code.startsWith('Key')) return code.slice(3)
-  if (code.startsWith('Digit')) return code.slice(5)
-  if (['Enter', 'Escape', 'Backspace', 'Tab'].includes(code)) return code
-  if (code.startsWith('Arrow') || /^F\d+$/.test(code)) return code
-  return code
-}
-
-const MODIFIER_MAP: Record<string, string> = {
-  Meta: 'Cmd',
-  Control: 'Ctrl',
-  Alt: 'Opt',
-  Shift: 'Shift',
-}
-
-export function formatHotkeyEvent({ modifiers, code }: HotkeyEvent): string {
-  const prettyMods = modifiers.map((m: string) => MODIFIER_MAP[m] || m)
-  const prettyCode = codeToDisplayName(code)
-  const parts = [...prettyMods, ...(code ? [prettyCode] : [])]
-  return parts.join('+')
-}
+import { KeyHint } from '@/settings/key-hint'
 
 const MODIFIER_CODES = [
   'MetaLeft',
@@ -35,6 +13,7 @@ const MODIFIER_CODES = [
   'AltLeft',
   'AltRight',
 ]
+
 function getModifiers(e: KeyboardEvent) {
   const mods: string[] = []
   if (e.metaKey) mods.push('Meta')
@@ -58,14 +37,15 @@ export function ShortcutInput({
     e.preventDefault()
     const mods = getModifiers(e)
     const isModifierKey = MODIFIER_CODES.includes(e.code)
-    const newShortcut = new HotkeyEvent({
+
+    const shortcut = new HotkeyEvent({
       modifiers: mods,
       code: isModifierKey ? '' : e.code,
     })
-    setPending(newShortcut)
 
-    if (!isModifierKey) {
-      onSubmit(newShortcut)
+    setPending(shortcut)
+    if (shortcut.code) {
+      onSubmit(shortcut)
     }
   }
 
@@ -80,7 +60,8 @@ export function ShortcutInput({
 
   const onFocus = () => setPending(new HotkeyEvent())
 
-  const label = pending ? formatHotkeyEvent(pending) || 'Press shortcut…' : formatHotkeyEvent(event)
+  const displayEvent = pending || event
+  const hasShortcut = displayEvent && (displayEvent.modifiers?.length > 0 || displayEvent.code)
 
   return (
     <button
@@ -89,11 +70,15 @@ export function ShortcutInput({
       onBlur={onBlur}
       onFocus={onFocus}
       tabIndex={0}
-      className={`h-8 px-3 rounded text-sm border w-40 text-left ${
-        pending ? 'bg-background/50 border-foreground' : 'bg-transparent border-input'
+      className={`w-full h-8 px-3 rounded-md text-sm border shadow-sm text-left flex items-center transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+        pending ? 'bg-background/50 border-foreground' : 'bg-background border-input'
       }`}
     >
-      {label}
+      {hasShortcut ? (
+        <KeyHint hotkey={displayEvent} />
+      ) : (
+        <span className="text-muted-foreground">Listening…</span>
+      )}
     </button>
   )
 }

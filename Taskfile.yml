@@ -30,4 +30,4 @@ tasks:
   dev:
     summary: Dev mode
     cmds:
-      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+      - ZETTL_ENV=development wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}

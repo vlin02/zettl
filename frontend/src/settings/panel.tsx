@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select'
-import { NumberInput } from '../components/ui/number-input'
+import { NumberInput } from './number-input'
 import { ShortcutInput } from './shortcut-input'
 import type { UISettings } from '../../bindings/zettl/pkg/models'
 
@@ -76,18 +76,19 @@ export function SettingsPanel({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium w-40">Font Size</span>
-            <NumberInput
-              value={settings.font_size}
-              min={8}
-              max={32}
-              step={1}
-              suffix="px"
-              onChange={async size => {
-                await SetFontSize(size)
-                onRefetch()
-              }}
-              className="w-56 h-8"
-            />
+            <div className="w-56 h-8">
+              <NumberInput
+                value={settings.font_size}
+                min={8}
+                max={32}
+                step={1}
+                suffix="px"
+                onChange={async size => {
+                  await SetFontSize(size)
+                  onRefetch()
+                }}
+              />
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium w-40">Data Retention</span>
@@ -104,18 +105,17 @@ export function SettingsPanel({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="1">1 day</SelectItem>
-                <SelectItem value="3">3 days</SelectItem>
                 <SelectItem value="7">1 week</SelectItem>
-                <SelectItem value="14">2 weeks</SelectItem>
                 <SelectItem value="30">1 month</SelectItem>
                 <SelectItem value="90">3 months</SelectItem>
                 <SelectItem value="365">1 year</SelectItem>
+                <SelectItem value="0">Forever</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium w-40">Toggle Shortcut</span>
-            <div className="w-56 flex justify-end">
+            <div className="w-56 h-8">
               <ShortcutInput
                 event={settings.toggle_hotkey}
                 onSubmit={async ev => {

@@ -1,19 +1,15 @@
 import { getTypeIcon, Clock } from './language'
-import { X, Copy } from 'lucide-react'
-import { Button } from '../components/ui/button'
+import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { SnippetPreview, SnippetDetail } from '../../bindings/zettl/pkg/models'
+import { SnippetPreview, SnippetDetail, HotkeyEvent } from '../../bindings/zettl/pkg/models'
 import { GetSnippetDetail } from '../../bindings/zettl/service'
+import { KeyHint } from '../settings/key-hint'
 
 export function ExpandedView({
   snippet,
-  onCopy,
-  onClose,
   fontSize,
 }: {
   snippet: SnippetPreview
-  onCopy: (text: string) => void
-  onClose: () => void
   fontSize: number
 }) {
   const [detail, setDetail] = useState<SnippetDetail | null>(null)
@@ -49,15 +45,16 @@ export function ExpandedView({
               {ts.toLocaleString()}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => onCopy(detail.content)}
-              title="Copy"
-              size="icon"
-              className="h-8 w-8"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <KeyHint hotkey={new HotkeyEvent({ modifiers: [], code: 'Enter' })} />
+              <span>copy</span>
+            </div>
+            <div className="h-3 w-px bg-border/50" />
+            <div className="flex items-center gap-1">
+              <KeyHint hotkey={new HotkeyEvent({ modifiers: ['Meta'], code: 'Enter' })} />
+              <span>copy + paste</span>
+            </div>
           </div>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto">

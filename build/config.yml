@@ -11,7 +11,7 @@ info:
   description: "MacOS clipboard app for developers" # The application description
   copyright: "© 2025, Zettl" # Copyright text
   comments: "MacOS clipboard app for developers" # Comments
-  version: "1.0.0" # The application version
+  version: "1.0.1" # The application version
 
 # Dev mode configuration
 dev_mode:

@@ -161,7 +161,7 @@ func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPrevie
 				lineOffset = strings.Count(content[:idx], "\n")
 			}
 		}
-		
+
 		var full []string
 		if err := json.Unmarshal([]byte(htmlLinesJSON), &full); err != nil {
 			panic(err)
