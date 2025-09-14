@@ -119,8 +119,6 @@ export function Sidebar() {
     style: CSSProperties
     parent: any
   }) => {
-    if (!search || !search.snippets[index] || !settings) return null
-
     return (
       <CellMeasurer
         key={key}
@@ -133,13 +131,13 @@ export function Sidebar() {
           <div ref={registerChild} style={style}>
             <div className="px-2 pb-2">
               <SnippetItem
-                snippet={search.snippets[index]}
-                isSelected={search.selectedIndex === index}
+                snippet={search!.snippets[index]}
+                isSelected={search!.selectedIndex === index}
                 onClick={() => {
                   search?.selectedIndex === index ? deselectIndex() : selectIndex(index)
                 }}
                 onCopy={onCopy}
-                fontSize={settings.font_size}
+                fontSize={settings!.font_size}
               />
             </div>
           </div>
@@ -188,11 +186,11 @@ export function Sidebar() {
 
   useEffect(() => {
     let lastText: string | undefined
-    let busy = false
+    let lock = false
 
     const id = window.setInterval(async () => {
-      if (busy) return
-      busy = true
+      if (lock) return
+      lock = true
       try {
         const text = await Clipboard.Text()
         if (text !== lastText) {
@@ -203,7 +201,7 @@ export function Sidebar() {
         }
         lastText = text
       } finally {
-        busy = false
+        lock = false
       }
     }, 200)
 

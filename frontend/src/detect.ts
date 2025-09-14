@@ -78,13 +78,9 @@ const MODEL_ID_TO_CHROMA: Record<string, string> = {
 // Returns the first Chroma-compatible lexer name detected for the content, or null if none.
 export async function detect(s: string): Promise<string> {
   await ensureModel()
-  let content = s.replace(/\r\n/g, '\n')
-  if (content.length < 100) {
-    const repeats = Math.ceil(100 / content.length)
-    content = Array(repeats).fill(content).join('\n')
-  }
+  s = s.split('\n').slice(0, 50).join('\n')
 
-  const out = await model!.executeAsync(tensor([content]))
+  const out = await model!.executeAsync(tensor([s]))
   const probsT: Tensor<Rank> = Array.isArray(out) ? out[0]! : out
   const langsT: Tensor<Rank> = Array.isArray(out) ? out[1]! : out
   const probs = probsT.dataSync() as Float32Array
