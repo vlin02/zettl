@@ -27,6 +27,7 @@ tasks:
     dir: frontend
     sources:
       - "**/*"
+      - exclude: bindings/**/*
     generates:
       - dist/**/*
     deps:
@@ -46,12 +47,8 @@ tasks:
   generate:bindings:
     label: generate:bindings (BUILD_FLAGS={{.BUILD_FLAGS}})
     summary: Generates bindings for the frontend
-    deps:
-      - task: go:mod:tidy
+    deps: []
     sources:
-      - "**/*.[jt]s"
-      - exclude: frontend/**/*
-      - frontend/bindings/**/*  # Rerun when switching between dev/production mode causes changes in output
       - "**/*.go"
       - go.mod
       - go.sum

@@ -25,7 +25,6 @@ type Search = {
 }
 
 export function Sidebar() {
-  console.log('refreshing')
   const [search, setSearch] = useState<Search | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<UISettings | null>(null)
@@ -35,6 +34,13 @@ export function Sidebar() {
   const searchRef = useRef<Search | null>(null)
   const cancelScrollRef = useRef<(() => void) | null>(null)
   const listRef = useRef<List>(null)
+  const lastVisibleAt = useRef<number>(Date.now())
+
+  const hideWindow = async () => {
+    if (Date.now() - lastVisibleAt.current < 500) return
+    await Window.Hide()
+  }
+
   const cache = useRef(
     new CellMeasurerCache({
       fixedWidth: true,
@@ -97,9 +103,9 @@ export function Sidebar() {
   const deselectIndex = () => setSearch(prev => (prev ? { ...prev, selectedIndex: -1 } : null))
 
   const onCopy = async (text: string, paste: boolean = false) => {
-    await navigator.clipboard.writeText(text)
-    await Window.Hide()
-    if (paste) await Paste(text, true)
+    await hideWindow()
+    await Clipboard.SetText(text)
+    if (paste) await Paste()
   }
 
   const renderRow = ({
@@ -129,8 +135,9 @@ export function Sidebar() {
               <SnippetItem
                 snippet={search.snippets[index]}
                 isSelected={search.selectedIndex === index}
-                onClick={() => (index: number) =>
-                  search?.selectedIndex === index ? deselectIndex() : selectIndex(index)}
+                onClick={() => {
+                  search?.selectedIndex === index ? deselectIndex() : selectIndex(index)
+                }}
                 onCopy={onCopy}
                 fontSize={settings.font_size}
               />
@@ -171,6 +178,7 @@ export function Sidebar() {
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
+        lastVisibleAt.current = Date.now()
         queryRef.current?.focus()
       }
     }
@@ -179,26 +187,27 @@ export function Sidebar() {
   }, [])
 
   useEffect(() => {
-    let lastClip = ''
-    let intervalId: number | undefined
-    ;(async () => {
-      lastClip = await Clipboard.Text()
+    let lastText: string | undefined
+    let busy = false
 
-      intervalId = window.setInterval(async () => {
-        if (!search) return
-        const clip = (await Clipboard.Text()) || ''
-        if (clip && clip !== lastClip) {
-          lastClip = clip
-          const lang = await detect(clip)
-          await AddSnippet(clip, lang)
-          Window.Hide()
+    const id = window.setInterval(async () => {
+      if (busy) return
+      busy = true
+      try {
+        const text = await Clipboard.Text()
+        if (text !== lastText) {
+          const lang = await detect(text)
+          await AddSnippet(text, lang)
+          await loadFirstPage('')
+          if (lastText !== undefined) await hideWindow()
         }
-      }, 200)
-    })()
+        lastText = text
+      } finally {
+        busy = false
+      }
+    }, 200)
 
-    return () => {
-      if (intervalId !== undefined) clearInterval(intervalId)
-    }
+    return () => clearInterval(id)
   }, [])
 
   useEffect(() => {
@@ -230,7 +239,7 @@ export function Sidebar() {
         }
         case 'Escape': {
           e.preventDefault()
-          Window.Hide()
+          hideWindow()
           return
         }
         case 'Meta+KeyC':

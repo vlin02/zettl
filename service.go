@@ -156,16 +156,12 @@ func (s *Service) AddSnippet(content string, language string) int64 {
 	return pkg.AddSnippet(s.db, content, language, time.Now().Unix())
 }
 
-func (s *Service) Paste(text string, paste bool) {
+func (s *Service) Paste() {
 	pkg.Paste()
 }
 
 func (s *Service) GetSnippetDetail(id int64) pkg.SnippetDetail {
 	return pkg.GetSnippetDetail(s.db, id)
-}
-
-func (s *Service) PurgeExpired() {
-	pkg.PurgeExpiredSnippets(s.db)
 }
 
 func (s *Service) registerHotkeys() {
@@ -181,8 +177,7 @@ func (s *Service) registerHotkeys() {
 		return
 	}
 	if err := hk.Register(); err != nil {
-		fmt.Println("hotkey register error:", err)
-		return
+		panic(err)
 	}
 	s.hk = hk
 	s.hkStop = make(chan struct{})

@@ -45,12 +45,8 @@ export function ListStyles(): $CancellablePromise<string[]> {
     });
 }
 
-export function Paste(text: string, paste: boolean): $CancellablePromise<void> {
-    return $Call.ByID(3113007736, text, paste);
-}
-
-export function PurgeExpired(): $CancellablePromise<void> {
-    return $Call.ByID(1375670581);
+export function Paste(): $CancellablePromise<void> {
+    return $Call.ByID(3113007736);
 }
 
 export function SetFontSize(size: number): $CancellablePromise<void> {
