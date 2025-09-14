@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Input } from '../components/ui/input.tsx'
-import { Clipboard, Window } from '@wailsio/runtime'
+import { Clipboard, Window, Application } from '@wailsio/runtime'
 import { UISettings, SnippetPreview } from '../../bindings/zettl/pkg/models.ts'
 import { Search } from './language.tsx'
 import { Settings as SettingsIcon } from 'lucide-react'
@@ -262,6 +262,11 @@ export function Sidebar() {
     const onKeyDown = (e: KeyboardEvent) => {
       e.preventDefault()
       
+      if (e.key === 'q' && e.metaKey) {
+        Application.Quit()
+        return
+      }
+
       if (e.key === 'l' && e.metaKey) {
         queryRef.current?.focus()
       } else if (e.key === 'Escape') {
