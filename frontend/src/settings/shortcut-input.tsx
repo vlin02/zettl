@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { HotkeyEvent } from '../../bindings/zettl/pkg/models'
+import { Shortcut } from '../../bindings/zettl/pkg/models'
 import { KeyHint } from '@/settings/key-hint'
 
 const MODIFIER_CODES = [
@@ -27,10 +27,10 @@ export function ShortcutInput({
   event,
   onSubmit,
 }: {
-  event: HotkeyEvent
-  onSubmit: (event: HotkeyEvent) => void
+  event: Shortcut
+  onSubmit: (event: Shortcut) => void
 }) {
-  const [pending, setPending] = useState<HotkeyEvent | null>(null)
+  const [pending, setPending] = useState<Shortcut | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
   const onKeyDown = (e: KeyboardEvent) => {
@@ -38,7 +38,7 @@ export function ShortcutInput({
     const mods = getModifiers(e)
     const isModifierKey = MODIFIER_CODES.includes(e.code)
 
-    const shortcut = new HotkeyEvent({
+    const shortcut = new Shortcut({
       modifiers: mods,
       code: isModifierKey ? '' : e.code,
     })
@@ -58,7 +58,7 @@ export function ShortcutInput({
     setPending(null)
   }
 
-  const onFocus = () => setPending(new HotkeyEvent())
+  const onFocus = () => setPending(new Shortcut())
 
   const displayEvent = pending || event
   const hasShortcut = displayEvent && (displayEvent.modifiers?.length > 0 || displayEvent.code)

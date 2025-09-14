@@ -154,13 +154,13 @@ var StringToModifier = map[string]hk.Modifier{
 	"Meta":    hk.ModCmd,
 }
 
-type HotkeyEvent struct {
+type Shortcut struct {
 	Modifiers []string `json:"modifiers"`
 	Code      string   `json:"code"`
 }
 
-func HotkeyToEvent(mods []hk.Modifier, key hk.Key) *HotkeyEvent {
-	e := &HotkeyEvent{Modifiers: make([]string, 0, len(mods)), Code: KeyToCode[key]}
+func HotkeyToEvent(mods []hk.Modifier, key hk.Key) *Shortcut {
+	e := &Shortcut{Modifiers: make([]string, 0, len(mods)), Code: KeyToCode[key]}
 	for _, m := range mods {
 		if s, ok := ModifierToString[m]; ok {
 			e.Modifiers = append(e.Modifiers, s)
@@ -169,7 +169,7 @@ func HotkeyToEvent(mods []hk.Modifier, key hk.Key) *HotkeyEvent {
 	return e
 }
 
-func EventToHotkey(e *HotkeyEvent) ([]hk.Modifier, hk.Key) {
+func EventToHotkey(e *Shortcut) ([]hk.Modifier, hk.Key) {
 	k, ok := CodeToKey[e.Code]
 	if !ok {
 		panic("invalid code")

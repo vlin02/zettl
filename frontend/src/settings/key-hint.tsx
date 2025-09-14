@@ -1,9 +1,9 @@
 import React from 'react'
 import { formatModifier, formatKeyCode } from '@/shortcut'
-import { HotkeyEvent } from 'bindings/zettl/pkg/models'
+import { Shortcut } from 'bindings/zettl/pkg/models'
 
 interface KeyHintProps {
-  hotkey: HotkeyEvent
+  hotkey: Shortcut
 }
 
 export const KeyHint = ({ hotkey }: KeyHintProps) => {

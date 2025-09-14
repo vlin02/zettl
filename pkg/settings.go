@@ -92,10 +92,10 @@ type Style struct {
 
 // UI-friendly settings for frontend: simplified shape
 type UISettings struct {
-	Style         Style       `json:"style"`
-	ToggleHotkey  HotkeyEvent `json:"toggle_hotkey"`
-	RetentionDays int         `json:"retention_days"`
-	FontSize      int         `json:"font_size"`
+	Style         Style    `json:"style"`
+	ToggleHotkey  Shortcut `json:"toggle_hotkey"`
+	RetentionDays int      `json:"retention_days"`
+	FontSize      int      `json:"font_size"`
 }
 
 // Removed SetUITheme: theme support dropped
@@ -124,7 +124,7 @@ func SetRetentionDays(db *sql.DB, days int) {
 	}
 }
 
-func SetToggleHotkey(db *sql.DB, event HotkeyEvent) {
+func SetToggleHotkey(db *sql.DB, event Shortcut) {
 	if db == nil {
 		return
 	}

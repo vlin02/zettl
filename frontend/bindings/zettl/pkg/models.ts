@@ -5,12 +5,12 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
-export class HotkeyEvent {
+export class Shortcut {
     "modifiers": string[];
     "code": string;
 
-    /** Creates a new HotkeyEvent instance. */
-    constructor($$source: Partial<HotkeyEvent> = {}) {
+    /** Creates a new Shortcut instance. */
+    constructor($$source: Partial<Shortcut> = {}) {
         if (!("modifiers" in $$source)) {
             this["modifiers"] = [];
         }
@@ -22,15 +22,15 @@ export class HotkeyEvent {
     }
 
     /**
-     * Creates a new HotkeyEvent instance from a string or object.
+     * Creates a new Shortcut instance from a string or object.
      */
-    static createFrom($$source: any = {}): HotkeyEvent {
+    static createFrom($$source: any = {}): Shortcut {
         const $$createField0_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("modifiers" in $$parsedSource) {
             $$parsedSource["modifiers"] = $$createField0_0($$parsedSource["modifiers"]);
         }
-        return new HotkeyEvent($$parsedSource as Partial<HotkeyEvent>);
+        return new Shortcut($$parsedSource as Partial<Shortcut>);
     }
 }
 
@@ -141,7 +141,7 @@ export class Style {
  */
 export class UISettings {
     "style": Style;
-    "toggle_hotkey": HotkeyEvent;
+    "toggle_hotkey": Shortcut;
     "retention_days": number;
     "font_size": number;
 
@@ -151,7 +151,7 @@ export class UISettings {
             this["style"] = (new Style());
         }
         if (!("toggle_hotkey" in $$source)) {
-            this["toggle_hotkey"] = (new HotkeyEvent());
+            this["toggle_hotkey"] = (new Shortcut());
         }
         if (!("retention_days" in $$source)) {
             this["retention_days"] = 0;
@@ -183,4 +183,4 @@ export class UISettings {
 // Private type creation functions
 const $$createType0 = $Create.Array($Create.Any);
 const $$createType1 = Style.createFrom;
-const $$createType2 = HotkeyEvent.createFrom;
+const $$createType2 = Shortcut.createFrom;

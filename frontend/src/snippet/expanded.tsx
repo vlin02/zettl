@@ -1,17 +1,10 @@
-import { getTypeIcon, Clock } from './language'
-import { X } from 'lucide-react'
+import { Clock } from './language'
 import { useEffect, useRef, useState } from 'react'
-import { SnippetPreview, SnippetDetail, HotkeyEvent } from '../../bindings/zettl/pkg/models'
+import { SnippetPreview, SnippetDetail, Shortcut } from '../../bindings/zettl/pkg/models'
 import { GetSnippetDetail } from '../../bindings/zettl/service'
 import { KeyHint } from '../settings/key-hint'
 
-export function ExpandedView({
-  snippet,
-  fontSize,
-}: {
-  snippet: SnippetPreview
-  fontSize: number
-}) {
+export function ExpandedView({ snippet, fontSize }: { snippet: SnippetPreview; fontSize: number }) {
   const [detail, setDetail] = useState<SnippetDetail | null>(null)
   const timer = useRef<number | null>(null)
 
@@ -47,12 +40,12 @@ export function ExpandedView({
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
-              <KeyHint hotkey={new HotkeyEvent({ modifiers: [], code: 'Enter' })} />
+              <KeyHint hotkey={new Shortcut({ modifiers: [], code: 'Enter' })} />
               <span>copy</span>
             </div>
             <div className="h-3 w-px bg-border/50" />
             <div className="flex items-center gap-1">
-              <KeyHint hotkey={new HotkeyEvent({ modifiers: ['Meta'], code: 'Enter' })} />
+              <KeyHint hotkey={new Shortcut({ modifiers: ['Meta'], code: 'Enter' })} />
               <span>copy + paste</span>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Input } from '../components/ui/input.tsx'
 import { Clipboard, Window, Application } from '@wailsio/runtime'
-import { UISettings, SnippetPreview } from '../../bindings/zettl/pkg/models.ts'
+import { UISettings, SnippetPreview } from '../../bindings/zettl/pkg/models'
 import { Search } from './language.tsx'
 import { Settings as SettingsIcon } from 'lucide-react'
 import { Button } from '../components/ui/button.tsx'
@@ -11,25 +11,27 @@ import { SettingsPanel } from '../settings/panel.tsx'
 import { ExpandedView } from './expanded.tsx'
 import { detect } from '../detect.ts'
 import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized'
-import { AddSnippet, FindSnippets, GetUISettings, Paste } from '../../bindings/zettl/service.ts'
-
-const arrowDirection = (key: string): 'up' | 'down' | null =>
-  key === 'ArrowDown' ? 'down' : key === 'ArrowUp' ? 'up' : null
+import { AddSnippet, FindSnippets, GetUISettings, Paste } from '../../bindings/zettl/service'
+import { fromKeyboardEvent, shortcutToString } from '../shortcut.ts'
 
 const SCROLL_DELAY = 150
 const SCROLL_INTERVAL = 20
+const PAGE_SIZE = 100
+
+type Search = {
+  query: string
+  snippets: SnippetPreview[]
+  selectedIndex: number
+}
 
 export function Sidebar() {
-  const [page, setPage] = useState<{
-    query: string
-    items: SnippetPreview[]
-    selectedIndex: number
-  } | null>(null)
+  const [search, setSearch] = useState<Search | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<UISettings | null>(null)
 
   const pageLockId = useRef(0)
   const queryRef = useRef<HTMLInputElement>(null)
+  const searchRef = useRef<Search | null>(null)
   const cancelScrollRef = useRef<(() => void) | null>(null)
   const listRef = useRef<List>(null)
   const cache = useRef(
@@ -46,63 +48,59 @@ export function Sidebar() {
     cache.current.clearAll()
   }
 
-  const select = (direction: 'up' | 'down' | number) =>
-    setPage(prev => {
+  const loadFirstPage = async (query: string) => {
+    console.log(query)
+    const lockId = ++pageLockId.current
+    setSearch(prev =>
+      prev ? { ...prev, query, selectedIndex: -1 } : { query, snippets: [], selectedIndex: -1 },
+    )
+
+    const snippets = (await FindSnippets(query, 0, PAGE_SIZE)) || []
+
+    if (pageLockId.current !== lockId) return
+    pageLockId.current = 0
+
+    cache.current.clearAll()
+    setSearch({ query, snippets, selectedIndex: -1 })
+  }
+
+  const loadNextPage = async (search: Search) => {
+    if (!search || pageLockId.current !== 0) return
+    const lockId = ++pageLockId.current
+
+    const before = search.snippets.length ? search.snippets[search.snippets.length - 1].id : 0
+    const snippets = (await FindSnippets(search.query, before, PAGE_SIZE)) || []
+
+    if (pageLockId.current !== lockId) return
+    pageLockId.current = 0
+
+    setSearch(prev => (prev ? { ...prev, snippets: [...prev.snippets, ...snippets] } : prev))
+  }
+
+  const selectIndex = (direction: 'up' | 'down' | number) =>
+    setSearch(prev => {
       if (!prev) return null
 
-      let nextIndex: number
-      if (typeof direction === 'number') {
-        nextIndex = direction
-      } else {
-        const start =
-          prev.selectedIndex === -1
-            ? direction === 'down'
-              ? -1
-              : prev.items.length
-            : prev.selectedIndex
-        nextIndex = start + (direction === 'down' ? 1 : -1)
-      }
+      const count = prev.snippets.length
+      const toIndex =
+        typeof direction === 'number'
+          ? direction
+          : (prev.selectedIndex === -1 ? (direction === 'down' ? -1 : count) : prev.selectedIndex) +
+            (direction === 'down' ? 1 : -1)
 
       return {
         ...prev,
-        selectedIndex: Math.max(0, Math.min(nextIndex, prev.items.length - 1)),
+        selectedIndex: Math.max(0, Math.min(toIndex, count - 1)),
       }
     })
 
-  const deselect = () => setPage(prev => (prev ? { ...prev, selectedIndex: -1 } : null))
-
-  const loadPage = async (mode: 'reset' | 'append') => {
-    if (mode === 'append' && pageLockId.current !== 0) return
-
-    const currentLockId = ++pageLockId.current
-    const query = page?.query || ''
-
-    const before =
-      mode === 'append' && page?.items.length ? page.items[page.items.length - 1].id : 0
-
-    const rows = (await FindSnippets(query, before, 100)) || []
-
-    if (pageLockId.current !== currentLockId) return
-
-    if (mode === 'reset') {
-      cache.current.clearAll()
-      setPage({ query, items: rows, selectedIndex: -1 })
-    } else if (page) {
-      setPage({ ...page, items: [...page.items, ...rows] })
-    }
-    pageLockId.current = 0
-  }
+  const deselectIndex = () => setSearch(prev => (prev ? { ...prev, selectedIndex: -1 } : null))
 
   const onCopy = async (text: string, paste: boolean = false) => {
     await navigator.clipboard.writeText(text)
     await Window.Hide()
-    if (paste) {
-      await Paste(text, true)
-    }
+    if (paste) await Paste(text, true)
   }
-
-  const handleSnippetClick = (index: number) =>
-    page?.selectedIndex === index ? deselect() : select(index)
 
   const renderRow = ({
     index,
@@ -115,7 +113,7 @@ export function Sidebar() {
     style: CSSProperties
     parent: any
   }) => {
-    if (!page || !page.items[index] || !settings) return null
+    if (!search || !search.snippets[index] || !settings) return null
 
     return (
       <CellMeasurer
@@ -129,9 +127,10 @@ export function Sidebar() {
           <div ref={registerChild} style={style}>
             <div className="px-2 pb-2">
               <SnippetItem
-                snippet={page.items[index]}
-                isSelected={page.selectedIndex === index}
-                onClick={() => handleSnippetClick(index)}
+                snippet={search.snippets[index]}
+                isSelected={search.selectedIndex === index}
+                onClick={() => (index: number) =>
+                  search?.selectedIndex === index ? deselectIndex() : selectIndex(index)}
                 onCopy={onCopy}
                 fontSize={settings.font_size}
               />
@@ -147,10 +146,10 @@ export function Sidebar() {
       cancelScrollRef.current()
     }
 
-    select(direction)
+    selectIndex(direction)
 
     const delayTimeout = setTimeout(() => {
-      const interval = setInterval(() => select(direction), SCROLL_INTERVAL)
+      const interval = setInterval(() => selectIndex(direction), SCROLL_INTERVAL)
       cancelScrollRef.current = () => clearInterval(interval)
     }, SCROLL_DELAY)
 
@@ -166,7 +165,7 @@ export function Sidebar() {
 
   useEffect(() => {
     loadSettings()
-    loadPage('reset')
+    loadFirstPage('')
     queryRef.current?.focus()
   }, [])
 
@@ -179,76 +178,123 @@ export function Sidebar() {
     return () => document.removeEventListener('visibilitychange', onVis)
   }, [])
 
-  const handleQueryChange = async (newQuery: string) => {
-    const currentLockId = ++pageLockId.current
-
-    setPage(prev =>
-      prev ? { ...prev, query: newQuery } : { query: newQuery, items: [], selectedIndex: -1 },
-    )
-
-    const rows = (await FindSnippets(newQuery, 0, 100)) || []
-    if (pageLockId.current === currentLockId) {
-      cache.current.clearAll()
-      setPage({ query: newQuery, items: rows, selectedIndex: -1 })
-      pageLockId.current = 0
-    }
-  }
-
   useEffect(() => {
     let lastClip = ''
-    let mounted = true
+    let intervalId: number | undefined
+    ;(async () => {
+      lastClip = await Clipboard.Text()
 
-    const checkClipboard = async () => {
-      if (!mounted) return
-
-      const currentClip = await Clipboard.Text()
-
-      if (currentClip && currentClip !== lastClip) {
-        lastClip = currentClip
-        const lang = await detect(currentClip)
-        await AddSnippet(currentClip, lang)
-        loadPage('reset')
-        Window.Hide()
-      }
-    }
-
-    Clipboard.Text()
-      .then(async text => {
-        if (mounted) lastClip = text || ''
-      })
-      .catch(() => {})
-
-    const interval = setInterval(checkClipboard, 200)
+      intervalId = window.setInterval(async () => {
+        if (!search) return
+        const clip = (await Clipboard.Text()) || ''
+        if (clip && clip !== lastClip) {
+          lastClip = clip
+          const lang = await detect(clip)
+          await AddSnippet(clip, lang)
+          Window.Hide()
+        }
+      }, 200)
+    })()
 
     return () => {
-      mounted = false
-      clearInterval(interval)
+      if (intervalId !== undefined) clearInterval(intervalId)
     }
   }, [])
 
   useEffect(() => {
-    if (showSettings) {
-      stopScroll()
-      return
-    }
+    searchRef.current = search
+  }, [search])
+
+  useEffect(() => {
     let lastDir: 'up' | 'down' | null = null
+
     const onKeyDown = (e: KeyboardEvent) => {
-      const dir = arrowDirection(e.key)
-      if (!dir) return
-      e.preventDefault()
-      if (lastDir !== dir) {
-        lastDir = dir
-        startScroll(dir)
+      const s = shortcutToString(fromKeyboardEvent(e))
+      console.log(s)
+
+      switch (s) {
+        case 'Meta+ArrowUp': {
+          e.preventDefault()
+          const s = searchRef.current
+          if (s && s.snippets.length > 0) selectIndex(0)
+          return
+        }
+        case 'Meta+KeyQ': {
+          e.preventDefault()
+          Application.Quit()
+          return
+        }
+        case 'Meta+KeyL': {
+          e.preventDefault()
+          queryRef.current?.focus()
+          return
+        }
+        case 'Escape': {
+          e.preventDefault()
+          Window.Hide()
+          return
+        }
+        case 'Meta+KeyC':
+        case 'Enter': {
+          const s = searchRef.current
+          if (s && s.selectedIndex >= 0) {
+            e.preventDefault()
+            const { content } = s.snippets[s.selectedIndex]
+            onCopy(content, false)
+          }
+          return
+        }
+        case 'Meta+Enter': {
+          const s = searchRef.current
+          if (s && s.selectedIndex >= 0) {
+            e.preventDefault()
+            const { content } = s.snippets[s.selectedIndex]
+            onCopy(content, true)
+          }
+          return
+        }
+        case 'ArrowDown': {
+          e.preventDefault()
+          if (lastDir !== 'down') {
+            lastDir = 'down'
+            startScroll('down')
+          }
+          return
+        }
+        case 'ArrowUp': {
+          e.preventDefault()
+          if (lastDir !== 'up') {
+            lastDir = 'up'
+            startScroll('up')
+          }
+          return
+        }
+        default:
+          return
       }
     }
+
     const onKeyUp = (e: KeyboardEvent) => {
-      const dir = arrowDirection(e.key)
-      if (!dir) return
-      if (lastDir === dir) {
-        lastDir = null
-        stopScroll()
+      const s = shortcutToString(fromKeyboardEvent(e))
+
+      switch (s) {
+        case 'ArrowDown':
+          if (lastDir === 'down') {
+            lastDir = null
+            stopScroll()
+          }
+          break
+        case 'ArrowUp':
+          if (lastDir === 'up') {
+            lastDir = null
+            stopScroll()
+          }
+          break
+        default:
+          break
       }
     }
+
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     return () => {
@@ -256,43 +302,16 @@ export function Sidebar() {
       window.removeEventListener('keyup', onKeyUp)
       stopScroll()
     }
-  }, [showSettings])
+  }, [])
 
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault()
-      
-      if (e.key === 'q' && e.metaKey) {
-        Application.Quit()
-        return
-      }
-
-      if (e.key === 'l' && e.metaKey) {
-        queryRef.current?.focus()
-      } else if (e.key === 'Escape') {
-        Window.Hide()
-      } else if (e.key === 'Enter' && page && page.selectedIndex >= 0) {
-        console.log("here")
-        const { content } = page.items[page.selectedIndex]
-        onCopy(content, e.metaKey)
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [page?.selectedIndex, showSettings])
-
-  useEffect(() => {
-    if (page && page.selectedIndex !== -1) {
+    if (search && search.selectedIndex !== -1) {
       queryRef.current?.blur()
-      if (listRef.current) listRef.current.scrollToRow(page.selectedIndex)
+      if (listRef.current) listRef.current.scrollToRow(search.selectedIndex)
     }
-  }, [page?.selectedIndex])
+  }, [search?.selectedIndex])
 
-  if (!settings || !page) return null
+  if (!settings || !search) return null
 
   return (
     <div className="h-full flex overflow-hidden">
@@ -314,12 +333,12 @@ export function Sidebar() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search..."
-                  value={page.query}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleQueryChange(e.target.value)
-                  }
+                  value={search.query}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    loadFirstPage(e.target.value)
+                  }}
                   onFocus={() => {
-                    if (page.selectedIndex >= 0) deselect()
+                    if (search.selectedIndex >= 0) deselectIndex()
                   }}
                   className="pl-10 h-8 text-sm bg-background/50 border-border/50"
                   id="zettl-focus-input"
@@ -330,7 +349,7 @@ export function Sidebar() {
               <Button
                 type="button"
                 onClick={() => {
-                  deselect()
+                  deselectIndex()
                   setShowSettings(true)
                 }}
                 variant="secondary"
@@ -342,7 +361,7 @@ export function Sidebar() {
               </Button>
             </div>
             <div className="flex-1 overflow-hidden">
-              {page.items.length > 0 ? (
+              {search.snippets.length > 0 ? (
                 <div className="h-full">
                   <AutoSizer>
                     {({ height, width }) => (
@@ -350,14 +369,14 @@ export function Sidebar() {
                         ref={listRef}
                         height={height}
                         width={width}
-                        rowCount={page.items.length}
+                        rowCount={search.snippets.length}
                         rowHeight={cache.current.rowHeight}
                         deferredMeasurementCache={cache.current}
                         rowRenderer={renderRow}
                         onScroll={({ scrollTop, scrollHeight, clientHeight }) => {
                           const dist = scrollHeight - scrollTop - clientHeight
                           if (dist <= clientHeight * 2 && pageLockId.current === 0) {
-                            loadPage('append')
+                            loadNextPage(search)
                           }
                         }}
                         overscanRowCount={5}
@@ -365,7 +384,7 @@ export function Sidebar() {
                     )}
                   </AutoSizer>
                 </div>
-              ) : page.query.length === 0 ? (
+              ) : search.query.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Search className="h-8 w-8 mx-auto mb-3 opacity-50" />
                   <p className="text-sm">No snippets found</p>
@@ -379,11 +398,14 @@ export function Sidebar() {
 
       <div
         className={`bg-background transition-all duration-300 ${
-          page.selectedIndex >= 0 ? 'w-[80ch] opacity-100' : 'w-0 opacity-0 pointer-events-none'
+          search.selectedIndex >= 0 ? 'w-[80ch] opacity-100' : 'w-0 opacity-0 pointer-events-none'
         }`}
       >
-        {page.selectedIndex >= 0 && page.items[page.selectedIndex] && (
-          <ExpandedView snippet={page.items[page.selectedIndex]} fontSize={settings.font_size} />
+        {search.selectedIndex >= 0 && search.snippets[search.selectedIndex] && (
+          <ExpandedView
+            snippet={search.snippets[search.selectedIndex]}
+            fontSize={settings.font_size}
+          />
         )}
       </div>
     </div>

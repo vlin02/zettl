@@ -1,4 +1,4 @@
-import { HotkeyEvent } from 'bindings/zettl/pkg/models'
+import { Shortcut } from '../bindings/zettl/pkg/models'
 
 const keyCodeMap = {
   KeyA: 'A',
@@ -81,8 +81,7 @@ export const formatKeyCode = (code: string) => {
 }
 
 const modifierMap = {
-  Cmd: '⌘',
-  Ctrl: '⌃',
+  Control: '⌃',
   Alt: '⌥',
   Shift: '⇧',
   Meta: '⌘',
@@ -90,7 +89,15 @@ const modifierMap = {
 
 export const formatModifier = (modifier: string) => modifierMap[modifier] || modifier
 
-export const formatShortcut = (shortcut: HotkeyEvent) => {
-  const key = formatKeyCode(shortcut.code)
-  return [...shortcut.modifiers.map(formatModifier), key].join(' ')
+export const fromKeyboardEvent = (ev: KeyboardEvent): Shortcut => {
+  const modifiers: string[] = []
+  if (ev.altKey) modifiers.push('Alt')
+  if (ev.ctrlKey) modifiers.push('Control')
+  if (ev.metaKey) modifiers.push('Meta')
+  if (ev.shiftKey) modifiers.push('Shift')
+  return new Shortcut({ modifiers, code: ev.code })
+}
+
+export const shortcutToString = (s: Shortcut) => {
+  return [...s.modifiers.sort(), s.code].join('+')
 }

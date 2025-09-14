@@ -110,6 +110,7 @@ func main() {
 		fmt.Println("Usage: db [--prod] <command> [args]\nCommands: settings | reset | seed [n] | dump [n] | search <query> | migrate | delete")
 		os.Exit(1)
 	}
+	
 	cmd := args[0]
 	dataDir := getDataDir(*prod)
 	os.MkdirAll(dataDir, 0755)
