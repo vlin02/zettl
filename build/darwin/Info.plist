@@ -10,13 +10,13 @@
         <key>CFBundleIdentifier</key>
             <string>dev.zettl.app</string>
         <key>CFBundleVersion</key>
-            <string>1.0.2</string>
+            <string>1.0.3</string>
         <key>CFBundleGetInfoString</key>
             <string>MacOS clipboard app for developers</string>
         <key>CFBundleShortVersionString</key>
-            <string>1.0.2</string>
+            <string>1.0.3</string>
         <key>CFBundleIconFile</key>
-            <string>icons</string>
+            <string>icons</string>]
         <key>LSApplicationCategoryType</key>
             <string>public.app-category.developer-tools</string>
         <key>LSMinimumSystemVersion</key>
