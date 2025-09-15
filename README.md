@@ -3,6 +3,10 @@
    <h1>Zettl</h1>
 </div>
 
+<p align="center">
+  <img src="/assets/demo.png" alt="demo" />
+</p>
+
 _MacOS clipboard app for developers_
 
 - Supports all major languages
@@ -12,7 +16,3 @@ _MacOS clipboard app for developers_
 - Keyboard centric actions
 - Variety of themes
 - Lightweight
-
-<p align="center">
-  <img src="/assets/demo.png" alt="demo" />
-</p>
