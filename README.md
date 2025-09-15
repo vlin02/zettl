@@ -9,10 +9,14 @@
 
 _MacOS clipboard app for developers_
 
-- Supports all major languages
 - Blazingly fast search
-- Automatic syntax highlighting
-- Secure. 100% local model + database
+- ML Automatic syntax highlighting
+- Private. 100% local storage / inference
 - Keyboard centric actions
 - Variety of themes
 - Lightweight
+
+Credit
+- syntax highlighting: chroma
+- language detection: guesslang
+- framework: wails
