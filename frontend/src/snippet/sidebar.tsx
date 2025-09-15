@@ -3,8 +3,7 @@ import type { CSSProperties } from 'react'
 import { Input } from '../components/ui/input.tsx'
 import { Clipboard, Window, Application } from '@wailsio/runtime'
 import { UISettings, SnippetPreview } from '../../bindings/zettl/pkg/models'
-import { Search } from './language.tsx'
-import { Settings as SettingsIcon } from 'lucide-react'
+import { Search, Settings as SettingsIcon } from 'lucide-react'
 import { Button } from '../components/ui/button.tsx'
 import { SnippetItem } from './item.tsx'
 import { SettingsPanel } from '../settings/panel.tsx'
@@ -34,12 +33,6 @@ export function Sidebar() {
   const searchRef = useRef<Search | null>(null)
   const cancelScrollRef = useRef<(() => void) | null>(null)
   const listRef = useRef<List>(null)
-  const lastVisibleAt = useRef<number>(Date.now())
-
-  const hideWindow = async () => {
-    if (Date.now() - lastVisibleAt.current < 500) return
-    await Window.Hide()
-  }
 
   const cache = useRef(
     new CellMeasurerCache({
@@ -103,7 +96,7 @@ export function Sidebar() {
   const deselectIndex = () => setSearch(prev => (prev ? { ...prev, selectedIndex: -1 } : null))
 
   const onCopy = async (text: string, paste: boolean = false) => {
-    await hideWindow()
+    Window.Hide()
     await Clipboard.SetText(text)
     if (paste) await Paste()
   }
@@ -174,30 +167,20 @@ export function Sidebar() {
   }, [])
 
   useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        lastVisibleAt.current = Date.now()
-        queryRef.current?.focus()
-      }
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [])
-
-  useEffect(() => {
     let lastText: string | undefined
     let lock = false
 
     const id = window.setInterval(async () => {
       if (lock) return
       lock = true
+      const visible = document.visibilityState === 'visible'
       try {
         const text = await Clipboard.Text()
         if (text !== lastText) {
           const lang = await detect(text)
           await AddSnippet(text, lang)
           await loadFirstPage('')
-          if (lastText !== undefined) await hideWindow()
+          if (lastText !== undefined && !visible) await Window.Hide()
         }
         lastText = text
       } finally {
@@ -237,7 +220,7 @@ export function Sidebar() {
         }
         case 'Escape': {
           e.preventDefault()
-          hideWindow()
+          Window.Hide()
           return
         }
         case 'Meta+KeyC':
@@ -308,6 +291,16 @@ export function Sidebar() {
       window.removeEventListener('keyup', onKeyUp)
       stopScroll()
     }
+  }, [])
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        queryRef.current?.focus()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
   useEffect(() => {

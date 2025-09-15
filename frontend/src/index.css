@@ -49,6 +49,7 @@
 		--ring: #0a84ff;
 	}
 	body { @apply text-foreground; }
+	html, body { overscroll-behavior: none; }
 }
 
 @theme inline {
