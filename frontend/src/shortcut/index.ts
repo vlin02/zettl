@@ -1,4 +1,4 @@
-import { Shortcut } from '../bindings/zettl/pkg/models'
+import { Shortcut } from '../../bindings/zettl/pkg/models'
 
 const keyCodeMap = {
   KeyA: 'A',

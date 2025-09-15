@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { SnippetPreview, SnippetDetail, Shortcut } from '../../bindings/zettl/pkg/models'
 import { GetSnippetDetail } from '../../bindings/zettl/service'
-import { KeyHint } from '../settings/key-hint'
+import { KeyHint } from '../shortcut/hint'
 import { Clock } from 'lucide-react';
 
 export function ExpandedView({ snippet, fontSize }: { snippet: SnippetPreview; fontSize: number }) {

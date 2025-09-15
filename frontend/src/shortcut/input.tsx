@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { Shortcut } from '../../bindings/zettl/pkg/models'
-import { KeyHint } from '@/settings/key-hint'
+import { KeyHint } from '@/shortcut/hint'
 
 const MODIFIER_CODES = [
   'MetaLeft',

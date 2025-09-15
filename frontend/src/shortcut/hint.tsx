@@ -1,4 +1,3 @@
-import React from 'react'
 import { formatModifier, formatKeyCode } from '@/shortcut'
 import { Shortcut } from 'bindings/zettl/pkg/models'
 

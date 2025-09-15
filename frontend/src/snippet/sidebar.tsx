@@ -8,11 +8,11 @@ import { Button } from '../components/ui/button.tsx'
 import { SnippetItem } from './item.tsx'
 import { SettingsPanel } from '../settings/panel.tsx'
 import { ExpandedView } from './expanded.tsx'
-import { KeyHint } from '../settings/key-hint.tsx'
+import { KeyHint } from '../shortcut/hint.tsx'
 import { detect } from '../detect.ts'
 import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized'
 import { AddSnippet, FindSnippets, GetUISettings, Paste } from '../../bindings/zettl/service'
-import { fromKeyboardEvent, shortcutToString } from '../shortcut.ts'
+import { fromKeyboardEvent, shortcutToString } from '../shortcut/index.ts'
 
 const SCROLL_DELAY = 150
 const SCROLL_INTERVAL = 20
@@ -320,7 +320,6 @@ export function Sidebar() {
         {showSettings ? (
           <div className="bg-background h-full">
             <SettingsPanel
-              isOpen={showSettings}
               onClose={() => setShowSettings(false)}
               settings={settings}
               onRefetch={loadSettings}

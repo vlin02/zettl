@@ -16,26 +16,22 @@ import {
   SelectValue,
 } from '../components/ui/select'
 import { NumberInput } from './number-input'
-import { ShortcutInput } from './shortcut-input'
+import { ShortcutInput } from '../shortcut/input'
 import type { UISettings } from '../../bindings/zettl/pkg/models'
 
 export function SettingsPanel({
-  isOpen,
   onClose,
   settings,
   onRefetch,
 }: {
-  isOpen: boolean
   onClose: () => void
   settings: UISettings
   onRefetch: () => void
 }) {
   const [styles, setStyles] = useState<string[]>([])
   useEffect(() => {
-    if (isOpen) ListStyles().then(setStyles)
-  }, [isOpen])
-
-  if (!isOpen) return null
+    ListStyles().then(setStyles)
+  }, [])
 
   return (
     <div className="w-full h-full flex flex-col">
