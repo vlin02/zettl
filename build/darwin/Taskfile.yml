@@ -54,7 +54,6 @@ tasks:
   package:
     summary: Sign app and build macOS .pkg installer for Mac App Store
     deps:
-      - task: setup:assets
       - task: build:universal
     cmds:
       - mkdir -p {{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/{MacOS,Resources}
