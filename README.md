@@ -10,7 +10,7 @@
 _MacOS clipboard app for developers_
 
 - Blazingly fast search
-- ML Automatic syntax highlighting
+- Automatic syntax highlighting
 - Private. 100% local storage / inference
 - Keyboard centric actions
 - Variety of themes
