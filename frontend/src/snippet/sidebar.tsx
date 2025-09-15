@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Input } from '../components/ui/input.tsx'
 import { Clipboard, Window, Application } from '@wailsio/runtime'
-import { UISettings, SnippetPreview } from '../../bindings/zettl/pkg/models'
+import { UISettings, SnippetPreview, Shortcut } from '../../bindings/zettl/pkg/models'
 import { Search, Settings as SettingsIcon } from 'lucide-react'
 import { Button } from '../components/ui/button.tsx'
 import { SnippetItem } from './item.tsx'
 import { SettingsPanel } from '../settings/panel.tsx'
 import { ExpandedView } from './expanded.tsx'
+import { KeyHint } from '../settings/key-hint.tsx'
 import { detect } from '../detect.ts'
 import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized'
 import { AddSnippet, FindSnippets, GetUISettings, Paste } from '../../bindings/zettl/service'
@@ -339,10 +340,13 @@ export function Sidebar() {
                   onFocus={() => {
                     if (search.selectedIndex >= 0) deselectIndex()
                   }}
-                  className="pl-10 h-8 text-sm bg-background/50 border-border/50"
+                  className="pl-10 pr-16 h-8 text-sm bg-background/50 border-border/50"
                   id="zettl-focus-input"
                   ref={queryRef}
                 />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                  <KeyHint hotkey={new Shortcut({ modifiers: ['Meta'], code: 'KeyL' })} />
+                </div>
               </div>
 
               <Button
