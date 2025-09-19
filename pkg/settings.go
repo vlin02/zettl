@@ -22,7 +22,6 @@ func BootstrapDB(db *sql.DB) {
 	}
 }
 
-// Internal/native settings for backend usage
 type Settings struct {
 	Style         string
 	CSS           string

@@ -110,7 +110,7 @@ export function SettingsPanel({
             </Select>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium w-40">Toggle Shortcut</span>
+            <span className="text-sm font-medium w-40">Activate Zettl</span>
             <div className="w-56 h-8">
               <ShortcutInput
                 event={settings.toggle_hotkey}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SnippetPreview, SnippetDetail, Shortcut } from '../../bindings/zettl/pkg/models'
 import { GetSnippetDetail } from '../../bindings/zettl/service'
 import { KeyHint } from '../shortcut/hint'
-import { Clock } from 'lucide-react';
+import { Clock } from 'lucide-react'
 
 export function ExpandedView({ snippet, fontSize }: { snippet: SnippetPreview; fontSize: number }) {
   const [detail, setDetail] = useState<SnippetDetail | null>(null)
@@ -22,7 +22,7 @@ export function ExpandedView({ snippet, fontSize }: { snippet: SnippetPreview; f
     return () => {
       if (timer.current) window.clearTimeout(timer.current)
     }
-  }, [detail?.id, detail?.html])
+  }, [detail?.id])
 
   if (!detail) return null
 
@@ -55,11 +55,20 @@ export function ExpandedView({ snippet, fontSize }: { snippet: SnippetPreview; f
             className={'p-4 rounded-lg border border-border/30 chroma bg-muted/30 dark:bg-card/60'}
           >
             <div className="overflow-x-auto">
-              <div
-                className="font-mono leading-relaxed text-foreground/80 whitespace-pre"
-                style={{ fontSize: `${fontSize}px` }}
-                dangerouslySetInnerHTML={{ __html: detail.html }}
-              />
+              {detail.html ? (
+                <div
+                  className="font-mono leading-relaxed text-foreground/80 whitespace-pre"
+                  style={{ fontSize: `${fontSize}px` }}
+                  dangerouslySetInnerHTML={{ __html: detail.html }}
+                />
+              ) : (
+                <div
+                  className="font-mono leading-relaxed text-foreground/80 whitespace-pre"
+                  style={{ fontSize: `${fontSize}px` }}
+                >
+                  {detail.content}
+                </div>
+              )}
             </div>
           </div>
         </div>

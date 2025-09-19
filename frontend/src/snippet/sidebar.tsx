@@ -8,14 +8,12 @@ import { Button } from '../components/ui/button.tsx'
 import { SnippetItem } from './item.tsx'
 import { SettingsPanel } from '../settings/panel.tsx'
 import { ExpandedView } from './expanded.tsx'
-import { KeyHint } from '../shortcut/hint.tsx'
-import { detect } from '../detect.ts'
 import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized'
 import { AddSnippet, FindSnippets, GetUISettings, Paste } from '../../bindings/zettl/service'
 import { fromKeyboardEvent, shortcutToString } from '../shortcut/index.ts'
 
 const SCROLL_DELAY = 150
-const SCROLL_INTERVAL = 20
+const SCROLL_INTERVAL = 25
 const PAGE_SIZE = 100
 
 type Search = {
@@ -61,7 +59,7 @@ export function Sidebar() {
     pageLockId.current = 0
 
     cache.current.clearAll()
-    setSearch({ query, snippets, selectedIndex: -1 })
+    setSearch({ query, snippets, selectedIndex: snippets.length > 0 ? 0 : -1 })
   }
 
   const loadNextPage = async (search: Search) => {
@@ -165,31 +163,6 @@ export function Sidebar() {
   useEffect(() => {
     loadSettings()
     loadFirstPage('')
-  }, [])
-
-  useEffect(() => {
-    let lastText: string | undefined
-    let lock = false
-
-    const id = window.setInterval(async () => {
-      if (lock) return
-      lock = true
-      const visible = document.visibilityState === 'visible'
-      try {
-        const text = await Clipboard.Text()
-        if (text !== lastText) {
-          const lang = await detect(text)
-          await AddSnippet(text, lang)
-          await loadFirstPage('')
-          if (lastText !== undefined && !visible) await Window.Hide()
-        }
-        lastText = text
-      } finally {
-        lock = false
-      }
-    }, 200)
-
-    return () => clearInterval(id)
   }, [])
 
   useEffect(() => {
@@ -300,13 +273,13 @@ export function Sidebar() {
         queryRef.current?.focus()
       }
     }
+
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
   useEffect(() => {
     if (search && search.selectedIndex !== -1) {
-      queryRef.current?.blur()
       if (listRef.current) listRef.current.scrollToRow(search.selectedIndex)
     }
   }, [search?.selectedIndex])
@@ -314,7 +287,7 @@ export function Sidebar() {
   if (!settings || !search) return null
 
   return (
-    <div className="h-full flex overflow-hidden">
+    <div className="h-full flex overflow-hidden" onClick={() => queryRef.current?.focus()}>
       <style dangerouslySetInnerHTML={{ __html: settings.style.css }} />
       <div className="w-[50ch] flex flex-col min-h-0 overflow-hidden">
         {showSettings ? (
@@ -336,22 +309,16 @@ export function Sidebar() {
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     loadFirstPage(e.target.value)
                   }}
-                  onFocus={() => {
-                    if (search.selectedIndex >= 0) deselectIndex()
-                  }}
-                  className="pl-10 pr-16 h-8 text-sm bg-background/50 border-border/50"
+                  className="pl-10 h-8 text-sm bg-background/50 border-border/50 focus:outline-none focus:ring-0 focus:border-border/50 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                   id="zettl-focus-input"
                   ref={queryRef}
+                  autoFocus
                 />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                  <KeyHint hotkey={new Shortcut({ modifiers: ['Meta'], code: 'KeyL' })} />
-                </div>
               </div>
 
               <Button
                 type="button"
                 onClick={() => {
-                  deselectIndex()
                   setShowSettings(true)
                 }}
                 variant="secondary"
@@ -398,16 +365,19 @@ export function Sidebar() {
         )}
       </div>
 
-      <div
-        className={`bg-background transition-all duration-300 ${
-          search.selectedIndex >= 0 ? 'w-[80ch] opacity-100' : 'w-0 opacity-0 pointer-events-none'
-        }`}
-      >
-        {search.selectedIndex >= 0 && search.snippets[search.selectedIndex] && (
+      <div className="w-[80ch] bg-background">
+        {search.selectedIndex >= 0 && search.snippets[search.selectedIndex] ? (
           <ExpandedView
             snippet={search.snippets[search.selectedIndex]}
             fontSize={settings.font_size}
           />
+        ) : (
+          <div className="h-full flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <div className="text-sm opacity-50">No snippet selected</div>
+              <div className="text-xs mt-1 opacity-30">Select a snippet to view details</div>
+            </div>
+          </div>
         )}
       </div>
     </div>

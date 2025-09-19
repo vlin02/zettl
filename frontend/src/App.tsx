@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sidebar } from './snippet/sidebar'
 import { ThemeProvider } from 'next-themes'
-import { SetWidth, FrontendReady } from '../bindings/zettl/service'
+import { SetWidth, FrontendReady, AddSnippet } from '../bindings/zettl/service'
+import { Clipboard, Window } from '@wailsio/runtime'
+import { detect } from './detect'
 
 function App() {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -36,6 +38,31 @@ function App() {
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
+
+  useEffect(() => {
+    let lastText: string | undefined
+    let lock = false
+
+    const id = window.setInterval(async () => {
+      if (lock) return
+      lock = true
+      const visible = document.visibilityState === 'visible'
+      try {
+        const text = await Clipboard.Text()
+        if (lastText !== undefined && text !== lastText) {
+          const lang = await detect(text)
+          await AddSnippet(text, lang)
+          setSidebarKey(k => k + 1)
+          if (!visible) await Window.Hide()
+        }
+        lastText = text
+      } finally {
+        lock = false
+      }
+    }, 200)
+
+    return () => clearInterval(id)
   }, [])
 
   return (

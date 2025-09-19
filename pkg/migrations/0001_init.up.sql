@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS snippets (
   copied_at INTEGER NOT NULL,
   language TEXT,
   hash TEXT NOT NULL UNIQUE,
-  html_lines TEXT NOT NULL
+  html_lines TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_snippets_copied_at_desc ON snippets(copied_at DESC);
 CREATE VIRTUAL TABLE IF NOT EXISTS snippets_fts USING fts5(

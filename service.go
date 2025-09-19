@@ -16,15 +16,16 @@ import (
 )
 
 type Service struct {
-	ctx       context.Context
-	window    application.Window
-	db        *sql.DB
-	hk        *hotkey.Hotkey
-	hkStop    chan struct{}
-	app       *application.App
-	readyCh   chan struct{}
-	readyOnce sync.Once
-	logFile   *os.File
+	ctx        context.Context
+	window     application.Window
+	db         *sql.DB
+	hk         *hotkey.Hotkey
+	hkStop     chan struct{}
+	app        *application.App
+	readyCh    chan struct{}
+	readyOnce  sync.Once
+	logFile    *os.File
+	systemTray *application.SystemTray
 }
 
 func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
@@ -48,11 +49,12 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 	app := application.Get()
 	s.app = app
 	w := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:         "Zettl",
-		Frameless:     true,
-		AlwaysOnTop:   true,
-		DisableResize: true,
-		Hidden:        true,
+		Title:           "Zettl",
+		Frameless:       true,
+		AlwaysOnTop:     true,
+		DisableResize:   true,
+		Hidden:          true,
+		InitialPosition: application.WindowCentered,
 		Mac: application.MacWindow{
 			Appearance:    application.DefaultAppearance,
 			DisableShadow: true,
@@ -104,12 +106,31 @@ func (s *Service) show() {
 		h -= shift
 	}
 
+	// Add margins: 60px top and bottom
+	margin := 60
+	y += margin
+	h -= margin * 2
+
 	w, _ := s.window.Size()
 
 	go func() {
-		s.window.SetSize(w, h)
+		// Get the scale factor for the current display
+		scale := pkg.GetMonitorScale(did)
+
+		// Convert physical coordinates to DIP coordinates
+		// Height and Y are in physical pixels, need to convert to DIP
+		hDIP := int(float64(h) / scale)
+		yDIP := int(float64(y) / scale)
+
+		s.window.SetSize(w, hDIP)
 		s.window.SetPosition(-10000, -10000)
-		s.window.SetPosition(r.X, y)
+
+		// Center horizontally on screen
+		// X coordinates also need conversion to DIP
+		centerXPhysical := r.X + (r.W-w)/2
+		centerXDIP := int(float64(centerXPhysical) / scale)
+
+		s.window.SetPosition(centerXDIP, yDIP)
 		s.window.Show().Focus()
 	}()
 }
@@ -202,4 +223,22 @@ func (s *Service) registerHotkeys() {
 			}
 		}
 	}()
+}
+
+// ShowQuickLaunch shows the quick launch window
+func (s *Service) ShowQuickLaunch() {
+	if s.window != nil {
+		s.show()
+	}
+}
+
+// ToggleQuickLaunch toggles the quick launch window
+func (s *Service) ToggleQuickLaunch() {
+	if s.window != nil {
+		if s.window.IsVisible() {
+			s.window.Hide()
+		} else {
+			s.show()
+		}
+	}
 }

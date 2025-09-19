@@ -32,7 +32,12 @@ int zIsPrimary(int idx) {
 // Get mouse cursor position
 ScreenRect zGetCursorLocation() {
     NSPoint location = [NSEvent mouseLocation];
-    ScreenRect rect = {(int)location.x, (int)location.y, 0, 0};
+
+    // Convert from Cocoa coordinates (bottom-left origin) to screen coordinates (top-left origin)
+    NSScreen *mainScreen = [NSScreen mainScreen];
+    CGFloat mainHeight = [mainScreen frame].size.height;
+
+    ScreenRect rect = {(int)location.x, (int)(mainHeight - location.y), 0, 0};
     return rect;
 }
 
@@ -129,6 +134,15 @@ func GetScreenRect(index int) ScreenRect {
 		W: int(rect.w),
 		H: int(rect.h),
 	}
+}
+
+// GetMonitorScale returns the backing scale factor for the display at the given index
+func GetMonitorScale(index int) float64 {
+	scale := float64(C.zMonScale(C.int(index)))
+	if scale == 0 {
+		return 1
+	}
+	return scale
 }
 
 // Paste sends Cmd+V to the active app

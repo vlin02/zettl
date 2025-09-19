@@ -13,6 +13,12 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 )
 
+const (
+	// Maximum character count to syntax highlight
+	// Content larger than this will be stored as plain text
+	MaxSyntaxHighlightChars = 100000 // 100KB
+)
+
 type SnippetPreview struct {
 	ID       int64  `json:"id"`
 	Content  string `json:"content"`
@@ -36,24 +42,35 @@ func AddSnippet(db *sql.DB, content string, language string, copiedAt int64) int
 	}
 
 	used := l.Config().Name
-	lines, err := HighlightLinesWithClasses(content, l)
-	if err != nil {
-		panic(err)
-	}
-	b, err := json.Marshal(lines)
-	if err != nil {
-		panic(err)
-	}
 	h := sha256.Sum256([]byte(content))
 	hash := fmt.Sprintf("%x", h[:])
-	_, err = db.Exec("DELETE FROM snippets WHERE hash = ?", hash)
+
+	// Check content length to decide if we should syntax highlight
+	contentLength := len(content)
+
+	var htmlLinesJSON sql.NullString
+	if contentLength <= MaxSyntaxHighlightChars {
+		// Only do syntax highlighting for content under the size limit
+		lines, err := HighlightLinesWithClasses(content, l)
+		if err != nil {
+			panic(err)
+		}
+		b, err := json.Marshal(lines)
+		if err != nil {
+			panic(err)
+		}
+		htmlLinesJSON = sql.NullString{String: string(b), Valid: true}
+	}
+	// If contentLength > MaxSyntaxHighlightChars, htmlLinesJSON remains null
+
+	_, err := db.Exec("DELETE FROM snippets WHERE hash = ?", hash)
 	if err != nil {
 		panic(err)
 	}
 	res, err := db.Exec(`
 		INSERT INTO snippets(content, copied_at, language, hash, html_lines)
 		VALUES(?, ?, ?, ?, ?)
-	`, content, copiedAt, used, hash, string(b))
+	`, content, copiedAt, used, hash, htmlLinesJSON)
 	if err != nil {
 		panic(err)
 	}
@@ -149,7 +166,7 @@ func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPrevie
 		var content string
 		var copiedAt int64
 		var language string
-		var htmlLinesJSON string
+		var htmlLinesJSON sql.NullString
 		if err := rows.Scan(&id, &content, &copiedAt, &language, &htmlLinesJSON); err != nil {
 			panic(err)
 		}
@@ -162,16 +179,40 @@ func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPrevie
 			}
 		}
 
-		var full []string
-		if err := json.Unmarshal([]byte(htmlLinesJSON), &full); err != nil {
-			panic(err)
-		}
-
 		var previewHTML []string
-		if len(full) > 0 {
-			si := min(max(0, lineOffset), len(full))
-			ei := min(si+5, len(full))
-			previewHTML = full[si:ei]
+		if htmlLinesJSON.Valid && htmlLinesJSON.String != "" {
+			// Has syntax highlighting
+			var full []string
+			if err := json.Unmarshal([]byte(htmlLinesJSON.String), &full); err != nil {
+				panic(err)
+			}
+
+			if len(full) > 0 {
+				si := min(max(0, lineOffset), len(full))
+				ei := min(si+5, len(full))
+				previewHTML = full[si:ei]
+			}
+		} else {
+			// No syntax highlighting - create plain text preview
+			lines := strings.Split(content, "\n")
+			if len(lines) > 0 {
+				si := min(max(0, lineOffset), len(lines))
+				ei := min(si+5, len(lines))
+
+				// Create simple span-wrapped lines for preview
+				for i := si; i < ei; i++ {
+					// Escape HTML characters
+					line := strings.ReplaceAll(lines[i], "&", "&amp;")
+					line = strings.ReplaceAll(line, "<", "&lt;")
+					line = strings.ReplaceAll(line, ">", "&gt;")
+					line = strings.ReplaceAll(line, "\"", "&quot;")
+					line = strings.ReplaceAll(line, "'", "&#39;")
+
+					// Wrap in span like Chroma does
+					previewHTML = append(previewHTML, fmt.Sprintf(`<span style="display:flex;"><span>%s
+</span></span>`, line))
+				}
+			}
 		}
 		out = append(out, SnippetPreview{
 			ID:       id,
@@ -192,19 +233,22 @@ func GetSnippetDetail(db *sql.DB, id int64) SnippetDetail {
 		return SnippetDetail{}
 	}
 	var r SnippetDetail
-	var htmlLinesJSON string
+	var htmlLinesJSON sql.NullString
 	err := db.QueryRow(`SELECT id, content, copied_at, language, html_lines
 		FROM snippets WHERE id = ?`, id).
 		Scan(&r.ID, &r.Content, &r.CopiedAt, &r.Language, &htmlLinesJSON)
 	if err != nil {
 		panic(err)
 	}
-	var lines []string
-	if htmlLinesJSON != "" {
-		if err := json.Unmarshal([]byte(htmlLinesJSON), &lines); err != nil {
+
+	// Only set HTML if html_lines is not null
+	if htmlLinesJSON.Valid && htmlLinesJSON.String != "" {
+		var lines []string
+		if err := json.Unmarshal([]byte(htmlLinesJSON.String), &lines); err != nil {
 			panic(err)
 		}
+		r.HTML = strings.Join(lines, "")
 	}
-	r.HTML = strings.Join(lines, "")
+	// If html_lines is null, r.HTML remains empty string
 	return r
 }
