@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -103,23 +102,41 @@ func Reset(db *sql.DB) error {
 }
 
 func main() {
-	prod := flag.Bool("prod", false, "Use production environment")
-	flag.Parse()
-	args := flag.Args()
-	if len(args) == 0 {
-		fmt.Println("Usage: db [--prod] <command> [args]\nCommands: settings | reset | seed [n] | dump [n] | search <query> | migrate | delete")
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: db <command> [args]\nCommands: settings | reset | seed | dump | search | migrate | delete")
 		os.Exit(1)
 	}
-	
-	cmd := args[0]
-	dataDir := getDataDir(*prod)
-	os.MkdirAll(dataDir, 0755)
 
-	db := openDB(dataDir)
-	defer db.Close()
+	settingsCmd := flag.NewFlagSet("settings", flag.ExitOnError)
+	prodSettings := settingsCmd.Bool("prod", false, "Use production environment")
 
-	switch cmd {
+	resetCmd := flag.NewFlagSet("reset", flag.ExitOnError)
+	prodReset := resetCmd.Bool("prod", false, "Use production environment")
+
+	seedCmd := flag.NewFlagSet("seed", flag.ExitOnError)
+	prodSeed := seedCmd.Bool("prod", false, "Use production environment")
+	seedCount := seedCmd.Int("n", 0, "Number of items to seed (0 = all samples)")
+
+	dumpCmd := flag.NewFlagSet("dump", flag.ExitOnError)
+	prodDump := dumpCmd.Bool("prod", false, "Use production environment")
+	dumpCount := dumpCmd.Int("n", 10, "Number of items to dump")
+
+	searchCmd := flag.NewFlagSet("search", flag.ExitOnError)
+	prodSearch := searchCmd.Bool("prod", false, "Use production environment")
+
+	migrateCmd := flag.NewFlagSet("migrate", flag.ExitOnError)
+	prodMigrate := migrateCmd.Bool("prod", false, "Use production environment")
+
+	deleteCmd := flag.NewFlagSet("delete", flag.ExitOnError)
+	prodDelete := deleteCmd.Bool("prod", false, "Use production environment")
+
+	switch os.Args[1] {
 	case "settings":
+		settingsCmd.Parse(os.Args[2:])
+		dataDir := getDataDir(*prodSettings)
+		os.MkdirAll(dataDir, 0755)
+		db := openDB(dataDir)
+		defer db.Close()
 		s := pkg.GetUISettings(db)
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetEscapeHTML(false)
@@ -127,35 +144,39 @@ func main() {
 			panic(err)
 		}
 	case "reset":
+		resetCmd.Parse(os.Args[2:])
+		dataDir := getDataDir(*prodReset)
+		os.MkdirAll(dataDir, 0755)
+		db := openDB(dataDir)
+		defer db.Close()
 		if err := Reset(db); err != nil {
 			panic(err)
 		}
 	case "seed":
-		n := 0
-		if len(args) > 1 {
-			if x, e := strconv.Atoi(args[1]); e == nil {
-				n = x
-			}
-		}
-		if err := Seed(db, n); err != nil {
+		seedCmd.Parse(os.Args[2:])
+		dataDir := getDataDir(*prodSeed)
+		os.MkdirAll(dataDir, 0755)
+		db := openDB(dataDir)
+		defer db.Close()
+		if err := Seed(db, *seedCount); err != nil {
 			panic(err)
 		}
 	case "dump":
-		n := 10
-		if len(args) > 1 {
-			if x, e := strconv.Atoi(args[1]); e == nil {
-				n = x
-			}
-		}
-		if err := Dump(db, n); err != nil {
+		dumpCmd.Parse(os.Args[2:])
+		dataDir := getDataDir(*prodDump)
+		os.MkdirAll(dataDir, 0755)
+		db := openDB(dataDir)
+		defer db.Close()
+		if err := Dump(db, *dumpCount); err != nil {
 			panic(err)
 		}
 	case "search":
-		if len(args) < 2 {
-			fmt.Println("search requires a query")
-			os.Exit(1)
-		}
-		q := strings.Join(args[1:], " ")
+		searchCmd.Parse(os.Args[2:])
+		dataDir := getDataDir(*prodSearch)
+		os.MkdirAll(dataDir, 0755)
+		db := openDB(dataDir)
+		defer db.Close()
+		q := strings.Join(searchCmd.Args(), " ")
 		res := pkg.FindSnippets(db, q, 0, 50)
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetEscapeHTML(false)
@@ -163,8 +184,17 @@ func main() {
 			panic(err)
 		}
 	case "migrate":
+		migrateCmd.Parse(os.Args[2:])
+		dataDir := getDataDir(*prodMigrate)
+		os.MkdirAll(dataDir, 0755)
+		db := openDB(dataDir)
+		defer db.Close()
 		pkg.MigrateUp(db, "migrations")
 	case "delete":
+		deleteCmd.Parse(os.Args[2:])
+		dataDir := getDataDir(*prodDelete)
+		os.MkdirAll(dataDir, 0755)
+		db := openDB(dataDir)
 		db.Close()
 		dbPath := filepath.Join(dataDir, "zettl.db")
 		if err := os.Remove(dbPath); err != nil {
@@ -178,7 +208,7 @@ func main() {
 		}
 		fmt.Println("Database deleted.")
 	default:
-		fmt.Println("Unknown command:", cmd)
+		fmt.Println("Unknown command:", os.Args[1])
 		os.Exit(1)
 	}
 }
