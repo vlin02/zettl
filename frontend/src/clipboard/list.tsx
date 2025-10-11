@@ -7,18 +7,14 @@ type Props<T> = {
   selectedIndex: number
   renderItem: (item: T, isSelected: boolean, index: number) => ReactNode
   onLoadMore: () => void
+  cache: CellMeasurerCache
 }
 
-export function VirtualizedList<T>({ items, selectedIndex, renderItem, onLoadMore }: Props<T>) {
+export function VirtualizedList<T>({ items, selectedIndex, renderItem, onLoadMore, cache }: Props<T>) {
   const listRef = useRef<List>(null)
-  const cache = useRef(
-    new CellMeasurerCache({
-      fixedWidth: true,
-    }),
-  )
 
   const renderRow = ({ index, key, style, parent }: { index: number; key: string; style: CSSProperties; parent: any }) => (
-    <CellMeasurer key={key} cache={cache.current} parent={parent} columnIndex={0} rowIndex={index}>
+    <CellMeasurer key={key} cache={cache} parent={parent} columnIndex={0} rowIndex={index}>
       {({ registerChild }) => (
         <div ref={registerChild} style={style}>
           {renderItem(items[index], selectedIndex === index, index)}
@@ -41,8 +37,8 @@ export function VirtualizedList<T>({ items, selectedIndex, renderItem, onLoadMor
           height={height}
           width={width}
           rowCount={items.length}
-          rowHeight={cache.current.rowHeight}
-          deferredMeasurementCache={cache.current}
+          rowHeight={cache.rowHeight}
+          deferredMeasurementCache={cache}
           rowRenderer={renderRow}
           onScroll={({ scrollTop, scrollHeight, clientHeight }) => {
             const dist = scrollHeight - scrollTop - clientHeight

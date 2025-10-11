@@ -4,7 +4,7 @@ import { FindSnippets } from '../../bindings/zettl/service.ts'
 
 const PAGE_SIZE = 100
 
-type Search = {
+export type Search = {
   query: string
   snippets: SnippetPreview[]
   selectedIndex: number

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Input } from '../components/ui/input.tsx'
 import { Clipboard, Window, Application } from '@wailsio/runtime'
 import { UISettings } from '../../bindings/zettl/pkg/models.ts'
-import { Search, Settings as SettingsIcon } from 'lucide-react'
+import { Search as SearchIcon, Settings as SettingsIcon } from 'lucide-react'
 import { Button } from '../components/ui/button.tsx'
 import { SettingsPanel } from '../settings/panel.tsx'
 import { ExpandedView } from './expanded.tsx'
@@ -11,14 +11,16 @@ import { SnippetItem } from './item.tsx'
 import { GetUISettings, Paste } from '../../bindings/zettl/service.ts'
 import { fromKeyboardEvent, shortcutToString } from '../shortcut/index.ts'
 import { useAutoScroll } from '../hooks/useAutoScroll.ts'
-import { useSearch } from '../hooks/useSearch.ts'
+import { useSearch, type Search } from '../hooks/useSearch.ts'
+import { CellMeasurerCache } from 'react-virtualized'
 
 export function Sidebar() {
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<UISettings | null>(null)
 
   const queryRef = useRef<HTMLInputElement>(null)
-  const searchRef = useRef(null as ReturnType<typeof useSearch>['search'])
+  const searchRef = useRef<Search | null>(null)
+  const cache = useRef(new CellMeasurerCache({ fixedWidth: true }))
 
   const { search, loadPage, updateIndex } = useSearch()
   const { startScroll, stopScroll } = useAutoScroll(updateIndex)
@@ -44,6 +46,7 @@ export function Sidebar() {
 
   useEffect(() => {
     searchRef.current = search
+    cache.current.clearAll()
   }, [search])
 
   useEffect(() => {
@@ -59,19 +62,19 @@ export function Sidebar() {
         const s = searchRef.current
         if (s && s.snippets.length > 0) updateIndex(0)
       },
-      'Escape': () => Window.Hide(),
+      Escape: () => Window.Hide(),
       'Meta+KeyL': () => queryRef.current?.focus(),
       'Meta+KeyQ': () => Application.Quit(),
       'Meta+KeyC': () => copySelected(false),
-      'Enter': () => copySelected(false),
+      Enter: () => copySelected(false),
       'Meta+Enter': () => copySelected(true),
-      'ArrowDown': () => {
+      ArrowDown: () => {
         if (lastDir !== 'down') {
           lastDir = 'down'
           startScroll('down')
         }
       },
-      'ArrowUp': () => {
+      ArrowUp: () => {
         if (lastDir !== 'up') {
           lastDir = 'up'
           startScroll('up')
@@ -80,13 +83,13 @@ export function Sidebar() {
     }
 
     const keyUpHandlers: Record<string, () => void> = {
-      'ArrowDown': () => {
+      ArrowDown: () => {
         if (lastDir === 'down') {
           lastDir = null
           stopScroll()
         }
       },
-      'ArrowUp': () => {
+      ArrowUp: () => {
         if (lastDir === 'up') {
           lastDir = null
           stopScroll()
@@ -145,7 +148,7 @@ export function Sidebar() {
           <>
             <div className="p-3 flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search..."
                   value={search.query}
@@ -189,10 +192,10 @@ export function Sidebar() {
                     </div>
                   )}
                   onLoadMore={() => loadPage()}
+                  cache={cache.current}
                 />
               ) : search.query.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
-                  <Search className="h-8 w-8 mx-auto mb-3 opacity-50" />
                   <p className="text-sm">No snippets found</p>
                   <p className="text-xs mt-1">Try a different search term</p>
                 </div>
