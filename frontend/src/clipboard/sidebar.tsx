@@ -176,7 +176,7 @@ export function Sidebar() {
               </Button>
             </div>
             <div className="flex-1 overflow-hidden">
-              {search.snippets.length > 0 ? (
+              {search.snippets.length > 0 && (
                 <VirtualizedList
                   items={search.snippets}
                   selectedIndex={search.selectedIndex}
@@ -185,7 +185,7 @@ export function Sidebar() {
                       <SnippetItem
                         snippet={snippet}
                         isSelected={isSelected}
-                        onClick={() => updateIndex(isSelected ? -1 : index)}
+                        onClick={() => updateIndex(index)}
                         onCopy={onCopy}
                         fontSize={settings.font_size}
                       />
@@ -194,29 +194,23 @@ export function Sidebar() {
                   onLoadMore={() => loadPage()}
                   cache={cache.current}
                 />
-              ) : search.query.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p className="text-sm">No snippets found</p>
-                  <p className="text-xs mt-1">Try a different search term</p>
-                </div>
-              ) : null}
+              )}
             </div>
           </>
         )}
       </div>
       <div className="w-[80ch] bg-background">
-        {search.selectedIndex >= 0 && search.snippets[search.selectedIndex] ? (
+        {search.snippets.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <div className="text-sm opacity-50">No results</div>
+            </div>
+          </div>
+        ) : (
           <ExpandedView
             snippet={search.snippets[search.selectedIndex]}
             fontSize={settings.font_size}
           />
-        ) : (
-          <div className="h-full flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <div className="text-sm opacity-50">No snippet selected</div>
-              <div className="text-xs mt-1 opacity-30">Select a snippet to view details</div>
-            </div>
-          </div>
         )}
       </div>
     </div>
