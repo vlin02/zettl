@@ -36,19 +36,14 @@ func main() {
 		},
 	})
 
-	// Create system tray
 	systemTray := app.SystemTray.New()
 
-	// Set icon for macOS
 	systemTray.SetTemplateIcon(customTrayIcon)
 
-	// Set tooltip
 	systemTray.SetTooltip("Zettl - Quick Snippet Manager")
 
-	// Store systemTray reference in service
 	svc.systemTray = systemTray
 
-	// Create menu
 	menu := app.NewMenu()
 	menu.Add("Show").OnClick(func(ctx *application.Context) {
 		if svc.window != nil {
@@ -61,7 +56,6 @@ func main() {
 
 	systemTray.SetMenu(menu)
 
-	// Handle left click on tray icon - toggle quick launch
 	systemTray.OnClick(func() {
 		if svc.window != nil {
 			svc.ToggleQuickLaunch()

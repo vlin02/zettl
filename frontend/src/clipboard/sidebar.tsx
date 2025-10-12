@@ -20,7 +20,7 @@ export function Sidebar() {
 
   const queryRef = useRef<HTMLInputElement>(null)
   const searchRef = useRef<Search | null>(null)
-  const cache = useRef(new CellMeasurerCache({ fixedWidth: true }))
+  const cellCache = useRef(new CellMeasurerCache({ fixedWidth: true }))
 
   const { search, loadPage, updateIndex } = useSearch()
   const { startScroll, stopScroll } = useAutoScroll(updateIndex)
@@ -46,7 +46,7 @@ export function Sidebar() {
 
   useEffect(() => {
     searchRef.current = search
-    cache.current.clearAll()
+    cellCache.current.clearAll()
   }, [search])
 
   useEffect(() => {
@@ -192,7 +192,7 @@ export function Sidebar() {
                     </div>
                   )}
                   onLoadMore={() => loadPage()}
-                  cache={cache.current}
+                  cache={cellCache.current}
                 />
               )}
             </div>

@@ -84,6 +84,7 @@ func Dump(db *sql.DB, n int) error {
 	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
 	return enc.Encode(out)
 }
 
@@ -107,36 +108,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	settingsCmd := flag.NewFlagSet("settings", flag.ExitOnError)
-	prodSettings := settingsCmd.Bool("prod", false, "Use production environment")
+	prod := flag.Bool("prod", false, "Use production environment")
+	flag.Parse()
 
-	resetCmd := flag.NewFlagSet("reset", flag.ExitOnError)
-	prodReset := resetCmd.Bool("prod", false, "Use production environment")
+	cmd := flag.Arg(0)
+	args := flag.Args()[1:]
 
-	seedCmd := flag.NewFlagSet("seed", flag.ExitOnError)
-	prodSeed := seedCmd.Bool("prod", false, "Use production environment")
-	seedCount := seedCmd.Int("n", 0, "Number of items to seed (0 = all samples)")
+	db := setupDB(*prod)
+	defer db.Close()
 
-	dumpCmd := flag.NewFlagSet("dump", flag.ExitOnError)
-	prodDump := dumpCmd.Bool("prod", false, "Use production environment")
-	dumpCount := dumpCmd.Int("n", 10, "Number of items to dump")
-
-	searchCmd := flag.NewFlagSet("search", flag.ExitOnError)
-	prodSearch := searchCmd.Bool("prod", false, "Use production environment")
-
-	migrateCmd := flag.NewFlagSet("migrate", flag.ExitOnError)
-	prodMigrate := migrateCmd.Bool("prod", false, "Use production environment")
-
-	deleteCmd := flag.NewFlagSet("delete", flag.ExitOnError)
-	prodDelete := deleteCmd.Bool("prod", false, "Use production environment")
-
-	switch os.Args[1] {
+	switch cmd {
 	case "settings":
-		settingsCmd.Parse(os.Args[2:])
-		dataDir := getDataDir(*prodSettings)
-		os.MkdirAll(dataDir, 0755)
-		db := openDB(dataDir)
-		defer db.Close()
 		s := pkg.GetUISettings(db)
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetEscapeHTML(false)
@@ -144,39 +126,27 @@ func main() {
 			panic(err)
 		}
 	case "reset":
-		resetCmd.Parse(os.Args[2:])
-		dataDir := getDataDir(*prodReset)
-		os.MkdirAll(dataDir, 0755)
-		db := openDB(dataDir)
-		defer db.Close()
 		if err := Reset(db); err != nil {
 			panic(err)
 		}
 	case "seed":
-		seedCmd.Parse(os.Args[2:])
-		dataDir := getDataDir(*prodSeed)
-		os.MkdirAll(dataDir, 0755)
-		db := openDB(dataDir)
-		defer db.Close()
-		if err := Seed(db, *seedCount); err != nil {
+		n := 0
+		if len(args) > 0 {
+			fmt.Sscanf(args[0], "%d", &n)
+		}
+		if err := Seed(db, n); err != nil {
 			panic(err)
 		}
 	case "dump":
-		dumpCmd.Parse(os.Args[2:])
-		dataDir := getDataDir(*prodDump)
-		os.MkdirAll(dataDir, 0755)
-		db := openDB(dataDir)
-		defer db.Close()
-		if err := Dump(db, *dumpCount); err != nil {
+		n := 10
+		if len(args) > 0 {
+			fmt.Sscanf(args[0], "%d", &n)
+		}
+		if err := Dump(db, n); err != nil {
 			panic(err)
 		}
 	case "search":
-		searchCmd.Parse(os.Args[2:])
-		dataDir := getDataDir(*prodSearch)
-		os.MkdirAll(dataDir, 0755)
-		db := openDB(dataDir)
-		defer db.Close()
-		q := strings.Join(searchCmd.Args(), " ")
+		q := strings.Join(args, " ")
 		res := pkg.FindSnippets(db, q, 0, 50)
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetEscapeHTML(false)
@@ -184,18 +154,10 @@ func main() {
 			panic(err)
 		}
 	case "migrate":
-		migrateCmd.Parse(os.Args[2:])
-		dataDir := getDataDir(*prodMigrate)
-		os.MkdirAll(dataDir, 0755)
-		db := openDB(dataDir)
-		defer db.Close()
 		pkg.MigrateUp(db, "migrations")
 	case "delete":
-		deleteCmd.Parse(os.Args[2:])
-		dataDir := getDataDir(*prodDelete)
-		os.MkdirAll(dataDir, 0755)
-		db := openDB(dataDir)
 		db.Close()
+		dataDir := getDataDir(*prod)
 		dbPath := filepath.Join(dataDir, "zettl.db")
 		if err := os.Remove(dbPath); err != nil {
 			panic(err)
@@ -208,12 +170,14 @@ func main() {
 		}
 		fmt.Println("Database deleted.")
 	default:
-		fmt.Println("Unknown command:", os.Args[1])
+		fmt.Println("Unknown command:", cmd)
 		os.Exit(1)
 	}
 }
 
-func openDB(dataDir string) *sql.DB {
+func setupDB(prod bool) *sql.DB {
+	dataDir := getDataDir(prod)
+	os.MkdirAll(dataDir, 0755)
 	dbPath := filepath.Join(dataDir, "zettl.db")
 	return pkg.OpenDB(dbPath)
 }
