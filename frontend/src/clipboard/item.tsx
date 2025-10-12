@@ -22,7 +22,7 @@ export function SnippetItem({
       id={`snip-${snippet.id}`}
       onClick={onClick}
       className={`group relative p-3 rounded-lg cursor-pointer border border-border/50 ${
-        isSelected ? 'bg-accent' : 'bg-card/60 hover:bg-accent/30'
+        isSelected ? 'bg-accent' : 'bg-card/80 hover:bg-accent/30'
       }`}
     >
       <div className="overflow-hidden">

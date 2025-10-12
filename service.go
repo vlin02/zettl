@@ -104,11 +104,14 @@ func (s *Service) show() {
 	h -= margin * 2
 
 	w, _ := s.window.Size()
+	centerX := r.X + (r.W-w)/2
+	centerY := r.Y + (r.H-h)/2
 
 	go func() {
 		s.window.SetSize(w, h)
 		s.window.SetPosition(-10000, -10000)
-		s.window.Center()
+		s.window.SetPosition(centerX, centerY)
+
 		s.window.Show().Focus()
 	}()
 }
@@ -203,14 +206,12 @@ func (s *Service) registerHotkeys() {
 	}()
 }
 
-// ShowQuickLaunch shows the quick launch window
 func (s *Service) ShowQuickLaunch() {
 	if s.window != nil {
 		s.show()
 	}
 }
 
-// ToggleQuickLaunch toggles the quick launch window
 func (s *Service) ToggleQuickLaunch() {
 	if s.window != nil {
 		if s.window.IsVisible() {

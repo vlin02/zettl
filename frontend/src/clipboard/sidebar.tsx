@@ -159,7 +159,6 @@ export function Sidebar() {
                     loadPage(e.target.value)
                   }}
                   className="pl-10 h-8 text-sm bg-background/50 border-border/50 focus:outline-none focus:ring-0 focus:border-border/50 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                  id="zettl-focus-input"
                   ref={queryRef}
                   autoFocus
                 />

@@ -6,7 +6,7 @@
         <key>CFBundleName</key>
             <string>Zettl</string>
         <key>CFBundleExecutable</key>
-            <string>zettl</string>
+            <string>Zettl</string>
         <key>CFBundleIdentifier</key>
             <string>dev.zettl.app</string>
         <key>CFBundleVersion</key>
