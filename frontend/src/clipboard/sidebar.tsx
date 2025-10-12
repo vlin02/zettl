@@ -8,8 +8,8 @@ import { SettingsPanel } from '../settings/panel.tsx'
 import { ExpandedView } from './expanded.tsx'
 import { VirtualizedList } from './list.tsx'
 import { SnippetItem } from './item.tsx'
-import { GetUISettings, Paste } from '../../bindings/zettl/service.ts'
-import { fromKeyboardEvent, shortcutToString } from '../shortcut/index.ts'
+import { GetUISettings, Paste } from '../../bindings/zettl/service'
+import { fromKeyboardEvent, shortcutToString } from '../shortcut'
 import { useAutoScroll } from '../hooks/useAutoScroll.ts'
 import { useSearch, type Search } from '../hooks/useSearch.ts'
 import { CellMeasurerCache } from 'react-virtualized'
@@ -46,8 +46,11 @@ export function Sidebar() {
 
   useEffect(() => {
     searchRef.current = search
-    cellCache.current.clearAll()
   }, [search])
+
+  useEffect(() => {
+    cellCache.current.clearAll() // clear cache AFTER new search renders
+  }, [search?.query])
 
   useEffect(() => {
     loadSettings()

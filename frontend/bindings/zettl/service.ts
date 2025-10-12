@@ -17,7 +17,7 @@ export function AppendLog(msg: string): $CancellablePromise<void> {
     return $Call.ByID(336368141, msg);
 }
 
-export function FindSnippets(q: string, before: number, limit: number): $CancellablePromise<pkg$0.SnippetPreview[]> {
+export function FindSnippets(q: string, before: number, limit: number): $CancellablePromise<pkg$0.Snippet[]> {
     return $Call.ByID(1291141136, q, before, limit).then(($result: any) => {
         return $$createType1($result);
     });
@@ -27,21 +27,21 @@ export function FrontendReady(): $CancellablePromise<void> {
     return $Call.ByID(141859388);
 }
 
-export function GetSnippetDetail(id: number): $CancellablePromise<pkg$0.SnippetDetail> {
+export function GetSnippetDetail(id: number): $CancellablePromise<pkg$0.Snippet> {
     return $Call.ByID(4198772317, id).then(($result: any) => {
-        return $$createType2($result);
+        return $$createType0($result);
     });
 }
 
 export function GetUISettings(): $CancellablePromise<pkg$0.UISettings> {
     return $Call.ByID(3371573040).then(($result: any) => {
-        return $$createType3($result);
+        return $$createType2($result);
     });
 }
 
 export function ListStyles(): $CancellablePromise<string[]> {
     return $Call.ByID(2922033651).then(($result: any) => {
-        return $$createType4($result);
+        return $$createType3($result);
     });
 }
 
@@ -84,8 +84,7 @@ export function ToggleQuickLaunch(): $CancellablePromise<void> {
 }
 
 // Private type creation functions
-const $$createType0 = pkg$0.SnippetPreview.createFrom;
+const $$createType0 = pkg$0.Snippet.createFrom;
 const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = pkg$0.SnippetDetail.createFrom;
-const $$createType3 = pkg$0.UISettings.createFrom;
-const $$createType4 = $Create.Array($Create.Any);
+const $$createType2 = pkg$0.UISettings.createFrom;
+const $$createType3 = $Create.Array($Create.Any);

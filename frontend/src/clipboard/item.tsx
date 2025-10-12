@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Copy, Check } from 'lucide-react'
-import type { SnippetPreview } from '../../bindings/zettl/pkg/models'
+import type { Snippet } from '../../bindings/zettl/pkg'
 
 export function SnippetItem({
   snippet,
@@ -9,7 +9,7 @@ export function SnippetItem({
   onCopy,
   fontSize,
 }: {
-  snippet: SnippetPreview
+  snippet: Snippet
   isSelected: boolean
   onClick: () => void
   onCopy: (text: string) => void
@@ -26,11 +26,20 @@ export function SnippetItem({
       }`}
     >
       <div className="overflow-hidden">
-        <div
-          className="font-mono leading-relaxed text-foreground/80 whitespace-pre w-[100ch] chroma"
-          style={{ fontSize: `${fontSize}px` }}
-          dangerouslySetInnerHTML={{ __html: snippet.html }}
-        />
+        {snippet.html ? (
+          <div
+            className="font-mono leading-relaxed text-foreground/80 whitespace-pre w-[100ch] chroma"
+            style={{ fontSize: `${fontSize}px` }}
+            dangerouslySetInnerHTML={{ __html: snippet.html }}
+          />
+        ) : (
+          <div
+            className="font-mono leading-relaxed text-foreground/80 whitespace-pre w-[100ch]"
+            style={{ fontSize: `${fontSize}px` }}
+          >
+            {snippet.content.split('\n').slice(0, 5).join('\n')}
+          </div>
+        )}
       </div>
       <button
         onClick={e => {

@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react'
-import { SnippetPreview } from '../../bindings/zettl/pkg/models.ts'
-import { FindSnippets } from '../../bindings/zettl/service.ts'
+import { Snippet } from '../../bindings/zettl/pkg'
+import { FindSnippets } from '../../bindings/zettl/service'
 
 const PAGE_SIZE = 100
 
 export type Search = {
   query: string
-  snippets: SnippetPreview[]
+  snippets: Snippet[]
   selectedIndex: number
 }
 
@@ -68,4 +68,3 @@ export function useSearch() {
 
   return { search, loadPage, updateIndex }
 }
-

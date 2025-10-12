@@ -117,7 +117,7 @@ func (s *Service) FrontendReady() {
 	s.readyOnce.Do(func() { close(s.readyCh) })
 }
 
-func (s *Service) FindSnippets(q string, before int64, limit int) []pkg.SnippetPreview {
+func (s *Service) FindSnippets(q string, before int64, limit int) []pkg.Snippet {
 	return pkg.FindSnippets(s.db, q, before, limit)
 }
 
@@ -159,7 +159,7 @@ func (s *Service) Paste() {
 	pkg.Paste()
 }
 
-func (s *Service) GetSnippetDetail(id int64) pkg.SnippetDetail {
+func (s *Service) GetSnippetDetail(id int64) pkg.Snippet {
 	return pkg.GetSnippetDetail(s.db, id)
 }
 

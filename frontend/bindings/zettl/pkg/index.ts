@@ -3,8 +3,7 @@
 
 export {
     Shortcut,
-    SnippetDetail,
-    SnippetPreview,
+    Snippet,
     Style,
     UISettings
 } from "./models.js";

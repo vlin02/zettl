@@ -34,15 +34,15 @@ export class Shortcut {
     }
 }
 
-export class SnippetDetail {
+export class Snippet {
     "id": number;
     "content": string;
     "copied_at": number;
     "language": string;
     "html": string;
 
-    /** Creates a new SnippetDetail instance. */
-    constructor($$source: Partial<SnippetDetail> = {}) {
+    /** Creates a new Snippet instance. */
+    constructor($$source: Partial<Snippet> = {}) {
         if (!("id" in $$source)) {
             this["id"] = 0;
         }
@@ -63,48 +63,11 @@ export class SnippetDetail {
     }
 
     /**
-     * Creates a new SnippetDetail instance from a string or object.
+     * Creates a new Snippet instance from a string or object.
      */
-    static createFrom($$source: any = {}): SnippetDetail {
+    static createFrom($$source: any = {}): Snippet {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new SnippetDetail($$parsedSource as Partial<SnippetDetail>);
-    }
-}
-
-export class SnippetPreview {
-    "id": number;
-    "content": string;
-    "copied_at": number;
-    "language": string;
-    "html": string;
-
-    /** Creates a new SnippetPreview instance. */
-    constructor($$source: Partial<SnippetPreview> = {}) {
-        if (!("id" in $$source)) {
-            this["id"] = 0;
-        }
-        if (!("content" in $$source)) {
-            this["content"] = "";
-        }
-        if (!("copied_at" in $$source)) {
-            this["copied_at"] = 0;
-        }
-        if (!("language" in $$source)) {
-            this["language"] = "";
-        }
-        if (!("html" in $$source)) {
-            this["html"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new SnippetPreview instance from a string or object.
-     */
-    static createFrom($$source: any = {}): SnippetPreview {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new SnippetPreview($$parsedSource as Partial<SnippetPreview>);
+        return new Snippet($$parsedSource as Partial<Snippet>);
     }
 }
 

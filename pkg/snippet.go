@@ -14,20 +14,10 @@ import (
 )
 
 const (
-	// Maximum character count to syntax highlight
-	// Content larger than this will be stored as plain text
 	MaxSyntaxHighlightChars = 100000 // 100KB
 )
 
-type SnippetPreview struct {
-	ID       int64  `json:"id"`
-	Content  string `json:"content"`
-	CopiedAt int64  `json:"copied_at"`
-	Language string `json:"language"`
-	HTML     string `json:"html"`
-}
-
-type SnippetDetail struct {
+type Snippet struct {
 	ID       int64  `json:"id"`
 	Content  string `json:"content"`
 	CopiedAt int64  `json:"copied_at"`
@@ -45,12 +35,10 @@ func AddSnippet(db *sql.DB, content string, language string, copiedAt int64) int
 	h := sha256.Sum256([]byte(content))
 	hash := fmt.Sprintf("%x", h[:])
 
-	// Check content length to decide if we should syntax highlight
 	contentLength := len(content)
 
 	var htmlLinesJSON sql.NullString
 	if contentLength <= MaxSyntaxHighlightChars {
-		// Only do syntax highlighting for content under the size limit
 		lines, err := HighlightLinesWithClasses(content, l)
 		if err != nil {
 			panic(err)
@@ -61,7 +49,6 @@ func AddSnippet(db *sql.DB, content string, language string, copiedAt int64) int
 		}
 		htmlLinesJSON = sql.NullString{String: string(b), Valid: true}
 	}
-	// If contentLength > MaxSyntaxHighlightChars, htmlLinesJSON remains null
 
 	_, err := db.Exec("DELETE FROM snippets WHERE hash = ?", hash)
 	if err != nil {
@@ -112,17 +99,13 @@ func PurgeExpiredSnippets(db *sql.DB) {
 		ph[i] = "?"
 		args[i] = id
 	}
-	_, err = db.Exec("DELETE FROM snippets_fts WHERE rowid IN ("+strings.Join(ph, ",")+")", args...)
-	if err != nil {
-		panic(err)
-	}
 	_, err = db.Exec("DELETE FROM snippets WHERE id IN ("+strings.Join(ph, ",")+")", args...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPreview {
+func FindSnippets(db *sql.DB, q string, before int64, limit int) []Snippet {
 	if limit <= 0 {
 		limit = 100
 	}
@@ -160,7 +143,7 @@ func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPrevie
 		panic(err)
 	}
 	defer rows.Close()
-	var out []SnippetPreview
+	var out []Snippet
 	for rows.Next() {
 		var id int64
 		var content string
@@ -170,56 +153,34 @@ func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPrevie
 		if err := rows.Scan(&id, &content, &copiedAt, &language, &htmlLinesJSON); err != nil {
 			panic(err)
 		}
-		lineOffset := 0
-		if q != "" {
-			lc := strings.ToLower(content)
-			lq := strings.ToLower(q)
-			if idx := strings.Index(lc, lq); idx >= 0 {
-				lineOffset = strings.Count(content[:idx], "\n")
-			}
-		}
 
-		var previewHTML []string
-		if htmlLinesJSON.Valid && htmlLinesJSON.String != "" {
-			// Has syntax highlighting
+		var previewHTML string
+		if htmlLinesJSON.Valid {
 			var full []string
 			if err := json.Unmarshal([]byte(htmlLinesJSON.String), &full); err != nil {
 				panic(err)
 			}
 
 			if len(full) > 0 {
+				lineOffset := 0
+				if q != "" {
+					lc := strings.ToLower(content)
+					lq := strings.ToLower(q)
+					if idx := strings.Index(lc, lq); idx >= 0 {
+						lineOffset = strings.Count(content[:idx], "\n")
+					}
+				}
 				si := min(max(0, lineOffset), len(full))
 				ei := min(si+5, len(full))
-				previewHTML = full[si:ei]
-			}
-		} else {
-			// No syntax highlighting - create plain text preview
-			lines := strings.Split(content, "\n")
-			if len(lines) > 0 {
-				si := min(max(0, lineOffset), len(lines))
-				ei := min(si+5, len(lines))
-
-				// Create simple span-wrapped lines for preview
-				for i := si; i < ei; i++ {
-					// Escape HTML characters
-					line := strings.ReplaceAll(lines[i], "&", "&amp;")
-					line = strings.ReplaceAll(line, "<", "&lt;")
-					line = strings.ReplaceAll(line, ">", "&gt;")
-					line = strings.ReplaceAll(line, "\"", "&quot;")
-					line = strings.ReplaceAll(line, "'", "&#39;")
-
-					// Wrap in span like Chroma does
-					previewHTML = append(previewHTML, fmt.Sprintf(`<span style="display:flex;"><span>%s
-</span></span>`, line))
-				}
+				previewHTML = strings.Join(full[si:ei], "")
 			}
 		}
-		out = append(out, SnippetPreview{
+		out = append(out, Snippet{
 			ID:       id,
 			Content:  content,
 			CopiedAt: copiedAt,
 			Language: language,
-			HTML:     strings.Join(previewHTML, ""),
+			HTML:     previewHTML,
 		})
 	}
 	if err := rows.Err(); err != nil {
@@ -228,11 +189,11 @@ func FindSnippets(db *sql.DB, q string, before int64, limit int) []SnippetPrevie
 	return out
 }
 
-func GetSnippetDetail(db *sql.DB, id int64) SnippetDetail {
+func GetSnippetDetail(db *sql.DB, id int64) Snippet {
 	if db == nil {
-		return SnippetDetail{}
+		return Snippet{}
 	}
-	var r SnippetDetail
+	var r Snippet
 	var htmlLinesJSON sql.NullString
 	err := db.QueryRow(`SELECT id, content, copied_at, language, html_lines
 		FROM snippets WHERE id = ?`, id).
@@ -241,7 +202,6 @@ func GetSnippetDetail(db *sql.DB, id int64) SnippetDetail {
 		panic(err)
 	}
 
-	// Only set HTML if html_lines is not null
 	if htmlLinesJSON.Valid && htmlLinesJSON.String != "" {
 		var lines []string
 		if err := json.Unmarshal([]byte(htmlLinesJSON.String), &lines); err != nil {
@@ -249,6 +209,5 @@ func GetSnippetDetail(db *sql.DB, id int64) SnippetDetail {
 		}
 		r.HTML = strings.Join(lines, "")
 	}
-	// If html_lines is null, r.HTML remains empty string
 	return r
 }
