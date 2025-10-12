@@ -71,9 +71,6 @@ export class Snippet {
     }
 }
 
-/**
- * Style represents syntax highlighting style configuration
- */
 export class Style {
     "css": string;
     "name": string;
@@ -99,9 +96,6 @@ export class Style {
     }
 }
 
-/**
- * UI-friendly settings for frontend: simplified shape
- */
 export class UISettings {
     "style": Style;
     "toggle_hotkey": Shortcut;

@@ -8,9 +8,10 @@ type Props<T> = {
   renderItem: (item: T, isSelected: boolean, index: number) => ReactNode
   onLoadMore: () => void
   cache: CellMeasurerCache
+  scrollTrigger?: number
 }
 
-export function VirtualizedList<T>({ items, selectedIndex, renderItem, onLoadMore, cache }: Props<T>) {
+export function VirtualizedList<T>({ items, selectedIndex, renderItem, onLoadMore, cache, scrollTrigger }: Props<T>) {
   const listRef = useRef<List>(null)
 
   const renderRow = ({ index, key, style, parent }: { index: number; key: string; style: CSSProperties; parent: any }) => (
@@ -24,10 +25,10 @@ export function VirtualizedList<T>({ items, selectedIndex, renderItem, onLoadMor
   )
 
   useEffect(() => {
-    if (selectedIndex !== -1 && listRef.current) {
+    if (listRef.current && selectedIndex >= 0) {
       listRef.current.scrollToRow(selectedIndex)
     }
-  }, [selectedIndex])
+  }, [selectedIndex, scrollTrigger])
 
   return (
     <AutoSizer>

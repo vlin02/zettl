@@ -17,6 +17,7 @@ import { CellMeasurerCache } from 'react-virtualized'
 export function Sidebar() {
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<UISettings | null>(null)
+  const [scrollTrigger, setScrollTrigger] = useState(0)
 
   const queryRef = useRef<HTMLInputElement>(null)
   const searchRef = useRef<Search | null>(null)
@@ -49,8 +50,8 @@ export function Sidebar() {
   }, [search])
 
   useEffect(() => {
-    cellCache.current.clearAll() // clear cache AFTER new search renders
-  }, [search?.query])
+    cellCache.current.clearAll() // clear cache when query or font size changes
+  }, [search?.query, settings?.font_size])
 
   useEffect(() => {
     loadSettings()
@@ -63,7 +64,10 @@ export function Sidebar() {
     const shortcuts: Record<string, () => void> = {
       'Meta+ArrowUp': () => {
         const s = searchRef.current
-        if (s && s.snippets.length > 0) updateIndex(0)
+        if (s && s.snippets.length > 0) {
+          updateIndex(0)
+          setScrollTrigger(prev => prev + 1)
+        }
       },
       Escape: () => Window.Hide(),
       'Meta+KeyL': () => queryRef.current?.focus(),
@@ -195,6 +199,7 @@ export function Sidebar() {
                   )}
                   onLoadMore={() => loadPage()}
                   cache={cellCache.current}
+                  scrollTrigger={scrollTrigger}
                 />
               )}
             </div>

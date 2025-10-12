@@ -69,16 +69,10 @@ export function SetWidth(w: number): $CancellablePromise<void> {
     return $Call.ByID(3917375589, w);
 }
 
-/**
- * ShowQuickLaunch shows the quick launch window
- */
 export function ShowQuickLaunch(): $CancellablePromise<void> {
     return $Call.ByID(3397529244);
 }
 
-/**
- * ToggleQuickLaunch toggles the quick launch window
- */
 export function ToggleQuickLaunch(): $CancellablePromise<void> {
     return $Call.ByID(4172081767);
 }
