@@ -86,6 +86,11 @@ void zSendCmdV() {
     CFRelease(cmdVUp);
     CFRelease(source);
 }
+
+// Hide the current application (activates the next frontmost app)
+void zHideApp() {
+    [NSApp hide:nil];
+}
 */
 import "C"
 
@@ -149,3 +154,9 @@ func GetMonitorScale(index int) float64 {
 func Paste() {
 	C.zSendCmdV()
 }
+
+// HideApp hides this application, transferring focus to the previous app
+func HideApp() {
+	C.zHideApp()
+}
+

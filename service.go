@@ -65,7 +65,8 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 	s.window = w
 
 	app.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, func(_ *application.ApplicationEvent) {
-		s.show()
+		pkg.HideApp()
+		s.window.Show()
 	})
 
 	go func() {
