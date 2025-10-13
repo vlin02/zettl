@@ -7,9 +7,6 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as application$0 from "../github.com/wailsapp/wails/v3/pkg/application/models.js";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore: Unused imports
 import * as pkg$0 from "./pkg/models.js";
 
 export function AddSnippet(content: string, language: string): $CancellablePromise<number> {
@@ -70,10 +67,6 @@ export function SetToggleHotkey(ev: pkg$0.KeyBinding): $CancellablePromise<void>
 
 export function SetWidth(w: number): $CancellablePromise<void> {
     return $Call.ByID(3917375589, w);
-}
-
-export function SetWindow(w: application$0.Window): $CancellablePromise<void> {
-    return $Call.ByID(769400459, w);
 }
 
 export function ShowQuickLaunch(): $CancellablePromise<void> {
