@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"database/sql"
+	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -16,11 +17,50 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+//go:embed realistic_snippets.json
+var realisticSnippetsFS embed.FS
+
+type RealisticSnippet struct {
+	Language string `json:"language"`
+	Content  string `json:"content"`
+}
+
 func encodeJSON(v any) error {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
+}
+
+func loadRealisticSnippets() ([]RealisticSnippet, error) {
+	data, err := realisticSnippetsFS.ReadFile("realistic_snippets.json")
+	if err != nil {
+		return nil, err
+	}
+	var snippets []RealisticSnippet
+	if err := json.Unmarshal(data, &snippets); err != nil {
+		return nil, err
+	}
+	return snippets, nil
+}
+
+func SeedRealistic(db *sql.DB, n int) error {
+	snippets, err := loadRealisticSnippets()
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().Unix()
+	if n <= 0 {
+		n = len(snippets)
+	}
+
+	for i := 0; i < n; i++ {
+		snippet := snippets[i%len(snippets)]
+		timestamp := now - int64(n-i)*3600
+		pkg.AddSnippet(db, snippet.Content, snippet.Language, timestamp)
+	}
+	return nil
 }
 
 func Seed(db *sql.DB, n int) error {
@@ -110,7 +150,7 @@ func Reset(db *sql.DB) error {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: db <command> [args]\nCommands: settings | reset | seed | dump | search | migrate | delete")
+		fmt.Println("Usage: db <command> [args]\nCommands: settings | reset | seed [realistic] [n] | dump | search | migrate | delete")
 		os.Exit(1)
 	}
 
@@ -133,12 +173,27 @@ func main() {
 			panic(err)
 		}
 	case "seed":
+		variant := ""
 		n := 0
 		if len(args) > 0 {
-			fmt.Sscanf(args[0], "%d", &n)
+			if args[0] == "realistic" {
+				variant = "realistic"
+				if len(args) > 1 {
+					fmt.Sscanf(args[1], "%d", &n)
+				}
+			} else {
+				fmt.Sscanf(args[0], "%d", &n)
+			}
 		}
-		if err := Seed(db, n); err != nil {
-			panic(err)
+
+		if variant == "realistic" {
+			if err := SeedRealistic(db, n); err != nil {
+				panic(err)
+			}
+		} else {
+			if err := Seed(db, n); err != nil {
+				panic(err)
+			}
 		}
 	case "dump":
 		n := 10

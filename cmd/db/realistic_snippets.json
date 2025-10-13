@@ -1,0 +1,63 @@
+[
+  {
+    "language": "go",
+    "content": "func (s *Service) FindUsers(ctx context.Context, filter UserFilter) ([]User, error) {\n\tquery := `SELECT id, email, name, created_at FROM users WHERE 1=1`\n\targs := []interface{}{}\n\t\n\tif filter.Email != \"\" {\n\t\tquery += \" AND email LIKE ?\"\n\t\targs = append(args, \"%\"+filter.Email+\"%\")\n\t}\n\t\n\trows, err := s.db.QueryContext(ctx, query, args...)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tdefer rows.Close()\n\t\n\tvar users []User\n\tfor rows.Next() {\n\t\tvar u User\n\t\tif err := rows.Scan(&u.ID, &u.Email, &u.Name, &u.CreatedAt); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tusers = append(users, u)\n\t}\n\treturn users, rows.Err()\n}"
+  },
+  {
+    "language": "python",
+    "content": "import asyncio\nimport aiohttp\nfrom typing import List, Dict, Optional\n\nasync def fetch_user_data(session: aiohttp.ClientSession, user_id: int) -> Optional[Dict]:\n    url = f\"https://api.example.com/users/{user_id}\"\n    try:\n        async with session.get(url) as response:\n            if response.status == 200:\n                return await response.json()\n            return None\n    except aiohttp.ClientError as e:\n        print(f\"Error fetching user {user_id}: {e}\")\n        return None\n\nasync def fetch_all_users(user_ids: List[int]) -> List[Dict]:\n    async with aiohttp.ClientSession() as session:\n        tasks = [fetch_user_data(session, uid) for uid in user_ids]\n        results = await asyncio.gather(*tasks)\n        return [r for r in results if r is not None]"
+  },
+  {
+    "language": "javascript",
+    "content": "import { useState, useEffect, useCallback } from 'react'\nimport debounce from 'lodash/debounce'\n\nexport function useSearchWithDebounce(initialQuery = '', delay = 300) {\n  const [query, setQuery] = useState(initialQuery)\n  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery)\n  const [isSearching, setIsSearching] = useState(false)\n\n  const debouncedSetQuery = useCallback(\n    debounce((value) => {\n      setDebouncedQuery(value)\n      setIsSearching(false)\n    }, delay),\n    [delay]\n  )\n\n  useEffect(() => {\n    setIsSearching(true)\n    debouncedSetQuery(query)\n    return () => debouncedSetQuery.cancel()\n  }, [query, debouncedSetQuery])\n\n  return { query, setQuery, debouncedQuery, isSearching }\n}"
+  },
+  {
+    "language": "typescript",
+    "content": "interface User {\n  id: string\n  email: string\n  name: string\n  role: 'admin' | 'user' | 'guest'\n  createdAt: Date\n}\n\ntype ApiResponse<T> = \n  | { success: true; data: T }\n  | { success: false; error: string }\n\nclass UserService {\n  private baseUrl: string\n\n  constructor(baseUrl: string) {\n    this.baseUrl = baseUrl\n  }\n\n  async getUser(id: string): Promise<ApiResponse<User>> {\n    try {\n      const response = await fetch(`${this.baseUrl}/users/${id}`)\n      if (!response.ok) {\n        return { success: false, error: `HTTP ${response.status}` }\n      }\n      const data = await response.json()\n      return { success: true, data }\n    } catch (error) {\n      return { success: false, error: String(error) }\n    }\n  }\n}"
+  },
+  {
+    "language": "rust",
+    "content": "use std::collections::HashMap;\nuse serde::{Deserialize, Serialize};\n\n#[derive(Debug, Serialize, Deserialize)]\nstruct Config {\n    server_port: u16,\n    database_url: String,\n    api_keys: Vec<String>,\n}\n\nimpl Config {\n    fn from_env() -> Result<Self, Box<dyn std::error::Error>> {\n        let server_port = std::env::var(\"SERVER_PORT\")?\n            .parse::<u16>()?;\n        let database_url = std::env::var(\"DATABASE_URL\")?;\n        let api_keys = std::env::var(\"API_KEYS\")?\n            .split(',')\n            .map(String::from)\n            .collect();\n        \n        Ok(Config {\n            server_port,\n            database_url,\n            api_keys,\n        })\n    }\n}"
+  },
+  {
+    "language": "sql",
+    "content": "WITH user_stats AS (\n  SELECT \n    u.id,\n    u.email,\n    COUNT(o.id) as order_count,\n    SUM(o.total_amount) as total_spent,\n    MAX(o.created_at) as last_order_date\n  FROM users u\n  LEFT JOIN orders o ON u.id = o.user_id\n  WHERE o.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)\n  GROUP BY u.id, u.email\n),\nuser_segments AS (\n  SELECT \n    *,\n    CASE \n      WHEN total_spent > 1000 THEN 'premium'\n      WHEN order_count > 5 THEN 'regular'\n      ELSE 'occasional'\n    END as segment\n  FROM user_stats\n)\nSELECT \n  segment,\n  COUNT(*) as user_count,\n  AVG(total_spent) as avg_spent\nFROM user_segments\nGROUP BY segment\nORDER BY avg_spent DESC;"
+  },
+  {
+    "language": "bash",
+    "content": "#!/bin/bash\nset -euo pipefail\n\nLOG_FILE=\"/var/log/deployment.log\"\nAPP_DIR=\"/opt/myapp\"\nBACKUP_DIR=\"/var/backups\"\n\nlog() {\n    echo \"[$(date +'%Y-%m-%d %H:%M:%S')] $*\" | tee -a \"$LOG_FILE\"\n}\n\nbackup_current() {\n    local backup_name=\"backup_$(date +'%Y%m%d_%H%M%S').tar.gz\"\n    log \"Creating backup: $backup_name\"\n    tar -czf \"${BACKUP_DIR}/${backup_name}\" -C \"$APP_DIR\" .\n}\n\ndeploy() {\n    log \"Starting deployment...\"\n    backup_current\n    \n    cd \"$APP_DIR\" || exit 1\n    git fetch origin\n    git reset --hard origin/main\n    \n    npm ci\n    npm run build\n    \n    sudo systemctl restart myapp\n    log \"Deployment completed successfully\"\n}\n\ndeploy"
+  },
+  {
+    "language": "html",
+    "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Dashboard - Analytics</title>\n    <link rel=\"stylesheet\" href=\"/styles/main.css\">\n</head>\n<body>\n    <nav class=\"navbar\">\n        <div class=\"container\">\n            <a href=\"/\" class=\"brand\">Analytics</a>\n            <ul class=\"nav-links\">\n                <li><a href=\"/dashboard\">Dashboard</a></li>\n                <li><a href=\"/reports\">Reports</a></li>\n                <li><a href=\"/settings\">Settings</a></li>\n            </ul>\n        </div>\n    </nav>\n    \n    <main class=\"container\">\n        <section class=\"stats-grid\">\n            <div class=\"stat-card\">\n                <h3>Total Users</h3>\n                <p class=\"stat-value\" data-metric=\"users\">0</p>\n            </div>\n        </section>\n    </main>\n    \n    <script src=\"/js/dashboard.js\"></script>\n</body>\n</html>"
+  },
+  {
+    "language": "json",
+    "content": "{\n  \"name\": \"my-app\",\n  \"version\": \"2.1.0\",\n  \"description\": \"A modern web application\",\n  \"main\": \"dist/index.js\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"tsc && vite build\",\n    \"test\": \"vitest\",\n    \"lint\": \"eslint src --ext ts,tsx\",\n    \"format\": \"prettier --write src/**/*.{ts,tsx}\"\n  },\n  \"dependencies\": {\n    \"react\": \"^18.2.0\",\n    \"react-dom\": \"^18.2.0\",\n    \"axios\": \"^1.4.0\"\n  },\n  \"devDependencies\": {\n    \"@types/react\": \"^18.2.0\",\n    \"typescript\": \"^5.0.0\",\n    \"vite\": \"^4.3.0\",\n    \"vitest\": \"^0.31.0\"\n  }\n}"
+  },
+  {
+    "language": "yaml",
+    "content": "name: CI/CD Pipeline\n\non:\n  push:\n    branches: [main, develop]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        node-version: [16.x, 18.x, 20.x]\n    \n    steps:\n      - uses: actions/checkout@v3\n      \n      - name: Use Node.js ${{ matrix.node-version }}\n        uses: actions/setup-node@v3\n        with:\n          node-version: ${{ matrix.node-version }}\n          cache: 'npm'\n      \n      - name: Install dependencies\n        run: npm ci\n      \n      - name: Run tests\n        run: npm test\n      \n      - name: Build\n        run: npm run build\n\n  deploy:\n    needs: test\n    runs-on: ubuntu-latest\n    if: github.ref == 'refs/heads/main'\n    \n    steps:\n      - uses: actions/checkout@v3\n      - name: Deploy to production\n        run: ./scripts/deploy.sh\n        env:\n          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}"
+  },
+  {
+    "language": "css",
+    "content": ":root {\n  --color-primary: #3b82f6;\n  --color-secondary: #8b5cf6;\n  --color-success: #10b981;\n  --color-danger: #ef4444;\n  --spacing-xs: 0.25rem;\n  --spacing-sm: 0.5rem;\n  --spacing-md: 1rem;\n  --spacing-lg: 1.5rem;\n  --radius: 0.5rem;\n}\n\n.card {\n  background: white;\n  border-radius: var(--radius);\n  padding: var(--spacing-lg);\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);\n  transition: all 0.3s ease;\n}\n\n.card:hover {\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);\n  transform: translateY(-2px);\n}\n\n@media (prefers-color-scheme: dark) {\n  .card {\n    background: #1f2937;\n    color: #f3f4f6;\n  }\n}"
+  },
+  {
+    "language": "docker",
+    "content": "FROM node:18-alpine AS builder\n\nWORKDIR /app\n\nCOPY package*.json ./\nRUN npm ci --only=production\n\nCOPY . .\nRUN npm run build\n\nFROM node:18-alpine\n\nWORKDIR /app\n\nRUN addgroup -g 1001 -S nodejs && \\\n    adduser -S nodejs -u 1001\n\nCOPY --from=builder --chown=nodejs:nodejs /app/dist ./dist\nCOPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules\nCOPY --from=builder --chown=nodejs:nodejs /app/package.json ./\n\nUSER nodejs\n\nEXPOSE 3000\n\nCMD [\"node\", \"dist/index.js\"]"
+  },
+  {
+    "language": "java",
+    "content": "package com.example.service;\n\nimport java.util.List;\nimport java.util.Optional;\nimport javax.inject.Inject;\nimport javax.transaction.Transactional;\n\npublic class UserService {\n    \n    @Inject\n    private UserRepository userRepository;\n    \n    @Inject\n    private EmailService emailService;\n    \n    @Transactional\n    public User createUser(UserDTO dto) {\n        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {\n            throw new IllegalArgumentException(\"Email already exists\");\n        }\n        \n        User user = new User();\n        user.setEmail(dto.getEmail());\n        user.setName(dto.getName());\n        user.setPasswordHash(hashPassword(dto.getPassword()));\n        \n        user = userRepository.save(user);\n        emailService.sendWelcomeEmail(user);\n        \n        return user;\n    }\n    \n    public Optional<User> findById(Long id) {\n        return userRepository.findById(id);\n    }\n}"
+  },
+  {
+    "language": "ruby",
+    "content": "class OrdersController < ApplicationController\n  before_action :authenticate_user!\n  before_action :set_order, only: [:show, :update, :cancel]\n  \n  def index\n    @orders = current_user.orders\n                          .includes(:items, :address)\n                          .order(created_at: :desc)\n                          .page(params[:page])\n    \n    render json: OrderSerializer.new(@orders).serializable_hash\n  end\n  \n  def create\n    @order = Order.new(order_params)\n    @order.user = current_user\n    \n    if @order.save\n      OrderMailer.confirmation_email(@order).deliver_later\n      render json: OrderSerializer.new(@order).serializable_hash, status: :created\n    else\n      render json: { errors: @order.errors.full_messages }, status: :unprocessable_entity\n    end\n  end\n  \n  private\n  \n  def set_order\n    @order = current_user.orders.find(params[:id])\n  end\n  \n  def order_params\n    params.require(:order).permit(:address_id, items: [:product_id, :quantity])\n  end\nend"
+  },
+  {
+    "language": "swift",
+    "content": "import Foundation\nimport Combine\n\nclass NetworkService {\n    private let session: URLSession\n    private let decoder: JSONDecoder\n    \n    init(session: URLSession = .shared) {\n        self.session = session\n        self.decoder = JSONDecoder()\n        self.decoder.keyDecodingStrategy = .convertFromSnakeCase\n    }\n    \n    func fetch<T: Decodable>(_ endpoint: Endpoint) -> AnyPublisher<T, Error> {\n        guard let url = endpoint.url else {\n            return Fail(error: NetworkError.invalidURL).eraseToAnyPublisher()\n        }\n        \n        var request = URLRequest(url: url)\n        request.httpMethod = endpoint.method.rawValue\n        endpoint.headers?.forEach { request.addValue($1, forHTTPHeaderField: $0) }\n        \n        return session.dataTaskPublisher(for: request)\n            .tryMap { data, response in\n                guard let httpResponse = response as? HTTPURLResponse,\n                      (200...299).contains(httpResponse.statusCode) else {\n                    throw NetworkError.serverError\n                }\n                return data\n            }\n            .decode(type: T.self, decoder: decoder)\n            .eraseToAnyPublisher()\n    }\n}"
+  }
+]
+
