@@ -11,7 +11,6 @@ import (
 
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/wailsapp/wails/v3/pkg/events"
 	"golang.design/x/hotkey"
 )
 
@@ -65,12 +64,6 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 	})
 	s.window = w
 
-	app.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, func(_ *application.ApplicationEvent) {
-		<-s.readyCh
-		windowPtr := s.window.NativeWindow()
-		pkg.ShowPanel(windowPtr, true)
-	})
-
 	go func() {
 		s.registerHotkeys()
 	}()
@@ -91,14 +84,14 @@ func (s *Service) AppendLog(msg string) {
 func (s *Service) show() {
 	<-s.readyCh
 	windowPtr := s.window.NativeWindow()
-	pkg.ShowPanel(windowPtr, false)
+	pkg.ShowPanel(windowPtr)
 }
 
 func (s *Service) FrontendReady() {
 	s.readyOnce.Do(func() {
 		close(s.readyCh)
 		windowPtr := s.window.NativeWindow()
-		pkg.HidePanelOnResignKey(windowPtr)
+		pkg.SetupPanelNotifications(windowPtr)
 	})
 }
 
@@ -138,6 +131,10 @@ func (s *Service) ListStyles() []string {
 
 func (s *Service) AddSnippet(content string, language string) int64 {
 	return pkg.AddSnippet(s.db, content, language, time.Now().Unix())
+}
+
+func (s *Service) Paste() {
+	pkg.Paste()
 }
 
 func (s *Service) GetSnippetDetail(id int64) pkg.Snippet {
