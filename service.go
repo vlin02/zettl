@@ -83,12 +83,6 @@ func (s *Service) AppendLog(msg string) {
 	}
 }
 
-func (s *Service) show() {
-	<-s.readyCh
-	windowPtr := s.window.NativeWindow()
-	pkg.ShowPanel(windowPtr)
-}
-
 func (s *Service) FrontendReady() {
 	s.readyOnce.Do(func() {
 		close(s.readyCh)
@@ -96,6 +90,13 @@ func (s *Service) FrontendReady() {
 		pkg.SetupPanelNotifications(windowPtr)
 		s.show()
 	})
+}
+
+func (s *Service) show() {
+	if s.window != nil {
+		windowPtr := s.window.NativeWindow()
+		pkg.ShowPanel(windowPtr)
+	}
 }
 
 func (s *Service) FindSnippets(q string, before int64, limit int) []pkg.Snippet {
@@ -119,7 +120,7 @@ func (s *Service) SetRetentionDays(days int) {
 	pkg.SetRetentionDays(s.db, days)
 }
 
-func (s *Service) SetToggleHotkey(ev pkg.KeyboardEvent) {
+func (s *Service) SetToggleHotkey(ev pkg.KeyBinding) {
 	pkg.SetToggleHotkey(s.db, ev)
 	s.registerHotkeys()
 }
@@ -182,17 +183,17 @@ func (s *Service) registerHotkeys() {
 }
 
 func (s *Service) ShowQuickLaunch() {
-	if s.window != nil {
-		s.show()
-	}
+	s.show()
 }
 
 func (s *Service) ToggleQuickLaunch() {
-	if s.window != nil {
-		if s.window.IsVisible() {
-			s.window.Hide()
-		} else {
-			s.show()
-		}
+	if s.window == nil {
+		s.show()
+		return
+	}
+	if s.window.IsVisible() {
+		s.window.Hide()
+	} else {
+		s.show()
 	}
 }

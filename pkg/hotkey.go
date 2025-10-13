@@ -134,7 +134,7 @@ type Hotkey struct {
 	Key  hk.Key
 }
 
-type KeyboardEvent struct {
+type KeyBinding struct {
 	Modifiers []string `json:"modifiers"`
 	Code      string   `json:"code"`
 }
@@ -173,8 +173,8 @@ func (h Hotkey) ToOpaque() *hk.Hotkey {
 	return hk.New(h.Mods, h.Key)
 }
 
-func (h Hotkey) ToEvent() *KeyboardEvent {
-	e := &KeyboardEvent{Modifiers: make([]string, 0, len(h.Mods)), Code: KeyToCode[h.Key]}
+func (h Hotkey) ToEvent() *KeyBinding {
+	e := &KeyBinding{Modifiers: make([]string, 0, len(h.Mods)), Code: KeyToCode[h.Key]}
 	for _, m := range h.Mods {
 		if s, ok := ModifierToString[m]; ok {
 			e.Modifiers = append(e.Modifiers, s)
@@ -183,7 +183,7 @@ func (h Hotkey) ToEvent() *KeyboardEvent {
 	return e
 }
 
-func (e *KeyboardEvent) ToHotkey() Hotkey {
+func (e *KeyBinding) ToHotkey() Hotkey {
 	k, ok := CodeToKey[e.Code]
 	if !ok {
 		panic("invalid code")

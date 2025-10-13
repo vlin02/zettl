@@ -5,12 +5,12 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
-export class KeyboardEvent {
+export class KeyBinding {
     "modifiers": string[];
     "code": string;
 
-    /** Creates a new KeyboardEvent instance. */
-    constructor($$source: Partial<KeyboardEvent> = {}) {
+    /** Creates a new KeyBinding instance. */
+    constructor($$source: Partial<KeyBinding> = {}) {
         if (!("modifiers" in $$source)) {
             this["modifiers"] = [];
         }
@@ -22,15 +22,15 @@ export class KeyboardEvent {
     }
 
     /**
-     * Creates a new KeyboardEvent instance from a string or object.
+     * Creates a new KeyBinding instance from a string or object.
      */
-    static createFrom($$source: any = {}): KeyboardEvent {
+    static createFrom($$source: any = {}): KeyBinding {
         const $$createField0_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("modifiers" in $$parsedSource) {
             $$parsedSource["modifiers"] = $$createField0_0($$parsedSource["modifiers"]);
         }
-        return new KeyboardEvent($$parsedSource as Partial<KeyboardEvent>);
+        return new KeyBinding($$parsedSource as Partial<KeyBinding>);
     }
 }
 
@@ -98,7 +98,7 @@ export class Style {
 
 export class UISettings {
     "style": Style;
-    "toggle_hotkey": KeyboardEvent;
+    "toggle_hotkey": KeyBinding;
     "retention_days": number;
     "font_size": number;
 
@@ -108,7 +108,7 @@ export class UISettings {
             this["style"] = (new Style());
         }
         if (!("toggle_hotkey" in $$source)) {
-            this["toggle_hotkey"] = (new KeyboardEvent());
+            this["toggle_hotkey"] = (new KeyBinding());
         }
         if (!("retention_days" in $$source)) {
             this["retention_days"] = 0;
@@ -140,4 +140,4 @@ export class UISettings {
 // Private type creation functions
 const $$createType0 = $Create.Array($Create.Any);
 const $$createType1 = Style.createFrom;
-const $$createType2 = KeyboardEvent.createFrom;
+const $$createType2 = KeyBinding.createFrom;

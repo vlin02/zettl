@@ -1,25 +1,25 @@
 import { formatModifier, formatKeyCode } from '@/shortcut'
-import { Shortcut } from 'bindings/zettl/pkg/models'
+import { KeyBinding } from 'bindings/zettl/pkg/models'
 
 interface KeyHintProps {
-  hotkey: Shortcut
+  keyBinding: KeyBinding
 }
 
-export const KeyHint = ({ hotkey }: KeyHintProps) => {
-  if (!hotkey || (!hotkey.modifiers?.length && !hotkey.code)) {
+export const KeyHint = ({ keyBinding }: KeyHintProps) => {
+  if (!keyBinding || (!keyBinding.modifiers?.length && !keyBinding.code)) {
     return null
   }
 
   const keys: string[] = []
   
-  if (hotkey.modifiers && hotkey.modifiers.length > 0) {
-    hotkey.modifiers.forEach(modifier => {
+  if (keyBinding.modifiers && keyBinding.modifiers.length > 0) {
+    keyBinding.modifiers.forEach(modifier => {
       keys.push(formatModifier(modifier))
     })
   }
   
-  if (hotkey.code) {
-    keys.push(formatKeyCode(hotkey.code))
+  if (keyBinding.code) {
+    keys.push(formatKeyCode(keyBinding.code))
   }
 
   return (

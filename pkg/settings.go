@@ -57,10 +57,10 @@ type Style struct {
 }
 
 type UISettings struct {
-	Style         Style         `json:"style"`
-	ToggleHotkey  KeyboardEvent `json:"toggle_hotkey"`
-	RetentionDays int           `json:"retention_days"`
-	FontSize      int           `json:"font_size"`
+	Style         Style      `json:"style"`
+	ToggleHotkey  KeyBinding `json:"toggle_hotkey"`
+	RetentionDays int        `json:"retention_days"`
+	FontSize      int        `json:"font_size"`
 }
 
 func SetSyntaxStyle(db *sql.DB, style string) {
@@ -81,7 +81,7 @@ func SetRetentionDays(db *sql.DB, days int) {
 	}
 }
 
-func SetToggleHotkey(db *sql.DB, event KeyboardEvent) {
+func SetToggleHotkey(db *sql.DB, event KeyBinding) {
 	hotkey := event.ToHotkey()
 	if _, err := db.Exec("UPDATE settings SET toggle_hotkey = ?", hotkey.Marshal()); err != nil {
 		panic(err)

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Snippet, Shortcut } from '../../bindings/zettl/pkg'
+import { Snippet, KeyBinding } from '../../bindings/zettl/pkg'
 import { GetSnippetDetail } from '../../bindings/zettl/service'
 import { KeyHint } from '../shortcut/hint'
 import { Clock } from 'lucide-react'
@@ -40,12 +40,12 @@ export function ExpandedView({ snippet, fontSize }: { snippet: Snippet; fontSize
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
-              <KeyHint hotkey={new Shortcut({ modifiers: [], code: 'Enter' })} />
+              <KeyHint keyBinding={new KeyBinding({ modifiers: [], code: 'Enter' })} />
               <span>copy</span>
             </div>
             <div className="h-3 w-px bg-border/50" />
             <div className="flex items-center gap-1">
-              <KeyHint hotkey={new Shortcut({ modifiers: ['Meta'], code: 'Enter' })} />
+              <KeyHint keyBinding={new KeyBinding({ modifiers: ['Meta'], code: 'Enter' })} />
               <span>copy + paste</span>
             </div>
           </div>

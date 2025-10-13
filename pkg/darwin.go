@@ -33,7 +33,7 @@ static void placeOnCursorScreen(NSWindow *w) {
     [w setFrame:(NSRect){{x, y}, {w0, h0}} display:NO];
 }
 
-void zShowPanel(void *window) {
+void showPanel(void *window) {
     NSWindow *w = (NSWindow *)window;
     dispatch_async(dispatch_get_main_queue(), ^{
         placeOnCursorScreen(w);
@@ -45,7 +45,7 @@ void zShowPanel(void *window) {
     });
 }
 
-void zSetupPanelNotifications(void *window) {
+void setupPanelNotifications(void *window) {
     NSWindow *w = (NSWindow *)window;
 
     [NSNotificationCenter.defaultCenter
@@ -81,7 +81,7 @@ void zSetupPanelNotifications(void *window) {
                 }];
 }
 
-void zSendCmdV(void) {
+void sendCmdV(void) {
     CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
     CGEventRef cmdVDown = CGEventCreateKeyboardEvent(source, 0x09, true);
     CGEventRef cmdVUp = CGEventCreateKeyboardEvent(source, 0x09, false);
@@ -102,13 +102,13 @@ import "C"
 import "unsafe"
 
 func SetupPanelNotifications(window unsafe.Pointer) {
-	C.zSetupPanelNotifications(window)
+	C.setupPanelNotifications(window)
 }
 
 func ShowPanel(window unsafe.Pointer) {
-	C.zShowPanel(window)
+	C.showPanel(window)
 }
 
 func Paste() {
-	C.zSendCmdV()
+	C.sendCmdV()
 }

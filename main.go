@@ -2,11 +2,11 @@ package main
 
 import (
 	"embed"
-	_ "embed"
 	"log"
 	"log/slog"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 //go:embed all:frontend/dist
@@ -46,9 +46,7 @@ func main() {
 
 	menu := app.NewMenu()
 	menu.Add("Show").OnClick(func(ctx *application.Context) {
-		if svc.window != nil {
-			svc.ShowQuickLaunch()
-		}
+		svc.ShowQuickLaunch()
 	})
 	menu.Add("Quit").OnClick(func(ctx *application.Context) {
 		app.Quit()
@@ -57,9 +55,11 @@ func main() {
 	systemTray.SetMenu(menu)
 
 	systemTray.OnClick(func() {
-		if svc.window != nil {
-			svc.ToggleQuickLaunch()
-		}
+		svc.ToggleQuickLaunch()
+	})
+
+	app.Event.OnApplicationEvent(events.Common.ApplicationStarted, func(event *application.ApplicationEvent) {
+		svc.ShowQuickLaunch()
 	})
 
 	err := app.Run()
