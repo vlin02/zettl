@@ -161,7 +161,6 @@ type Hotkey struct {
 	Key  hk.Key
 }
 
-
 type KeyboardEvent struct {
 	Modifiers []string `json:"modifiers"`
 	Code      string   `json:"code"`
@@ -210,7 +209,6 @@ func (h Hotkey) ToEvent() *KeyboardEvent {
 	}
 	return e
 }
-
 
 func (e *KeyboardEvent) ToHotkey() Hotkey {
 	k, ok := CodeToKey[e.Code]
