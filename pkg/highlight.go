@@ -17,38 +17,33 @@ func (noPreWrapper) Start(nl bool, style string) string { return "" }
 func (noPreWrapper) End(nl bool) string                 { return "" }
 
 func getChromaStyle(name string) *chroma.Style {
-	s := styles.Get(name)
-	if s == nil {
-		s = styles.Get("onedark")
+	if s := styles.Get(name); s != nil {
+		return s
 	}
-	return s
+	return styles.Get("onedark")
 }
 
 func ChromaCSSForStyle(styleName string) string {
-	f := html.New(
+	formatter := html.New(
 		html.WithClasses(true),
 		html.WithPreWrapper(noPreWrapper{}),
 		html.WithLineNumbers(true),
 	)
+
 	var buf bytes.Buffer
-	
-	_ = f.WriteCSS(&buf, getChromaStyle(styleName))
-	return filterChromaCSS(buf.String())
-}
+	_ = formatter.WriteCSS(&buf, getChromaStyle(styleName))
 
-func filterChromaCSS(css string) string {
-	lines := strings.Split(css, "\n")
-	out := make([]string, 0, len(lines))
+	lines := strings.Split(buf.String(), "\n")
+	filtered := make([]string, 0, len(lines))
 	for i, line := range lines {
-		if i == 0 || strings.Contains(line, "background-color") {
-			continue
+		if i > 0 && !strings.Contains(line, "background-color") {
+			filtered = append(filtered, line)
 		}
-		out = append(out, line)
 	}
-	return strings.Join(out, "\n")
+	return strings.Join(filtered, "\n")
 }
 
-func HighlightLinesWithClasses(src string, l chroma.Lexer) ([]string, error) {
+func HighlightLines(src string, l chroma.Lexer) ([]string, error) {
 	l = chroma.Coalesce(l)
 	it, err := l.Tokenise(nil, src)
 	if err != nil {

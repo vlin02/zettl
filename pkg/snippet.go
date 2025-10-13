@@ -39,7 +39,7 @@ func AddSnippet(db *sql.DB, content string, language string, copiedAt int64) int
 
 	var htmlLinesJSON sql.NullString
 	if contentLength <= MaxSyntaxHighlightChars {
-		lines, err := HighlightLinesWithClasses(content, l)
+		lines, err := HighlightLines(content, l)
 		if err != nil {
 			panic(err)
 		}

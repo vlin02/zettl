@@ -12,20 +12,21 @@ import (
 //go:embed migrations
 var migrationsFS embed.FS
 
-func MigrateUp(db *sql.DB, dir string) {
+func MigrateUp(db *sql.DB) error {
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
-		panic(err)
+		return err
 	}
 	sourceDriver, err := iofs.New(migrationsFS, "migrations")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	m, err := migrate.NewWithInstance("iofs", sourceDriver, "sqlite3", driver)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		panic(err)
+		return err
 	}
+	return nil
 }

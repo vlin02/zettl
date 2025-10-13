@@ -15,7 +15,6 @@ func BootstrapDB(db *sql.DB) {
 
 type Settings struct {
 	Style         string
-	CSS           string
 	RetentionDays int
 	ToggleHotkey  Hotkey
 }
@@ -28,7 +27,7 @@ func GetSettings(db *sql.DB) Settings {
 		panic(err)
 	}
 	hotkey := UnmarshalHotkey(toggle)
-	return Settings{Style: style, CSS: ChromaCSSForStyle(style), RetentionDays: days, ToggleHotkey: hotkey}
+	return Settings{Style: style, RetentionDays: days, ToggleHotkey: hotkey}
 }
 
 func GetUISettings(db *sql.DB) UISettings {

@@ -36,7 +36,9 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 	dbPath := fmt.Sprintf("%s/zettl.db", dataDir)
 
 	s.db = pkg.OpenDB(dbPath)
-	pkg.MigrateUp(s.db, "migrations")
+	if err := pkg.MigrateUp(s.db); err != nil {
+		panic(err)
+	}
 	pkg.BootstrapDB(s.db)
 
 	h, _ := os.UserHomeDir()

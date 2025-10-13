@@ -101,17 +101,14 @@ void zSendCmdV(void) {
 import "C"
 import "unsafe"
 
-// SetupPanelNotifications sets up all panel notification handlers (call once on startup)
 func SetupPanelNotifications(window unsafe.Pointer) {
 	C.zSetupPanelNotifications(window)
 }
 
-// ShowPanel shows the panel window positioned at the cursor's screen
 func ShowPanel(window unsafe.Pointer) {
 	C.zShowPanel(window)
 }
 
-// Paste sends Cmd+V to the active app
 func Paste() {
 	C.zSendCmdV()
 }

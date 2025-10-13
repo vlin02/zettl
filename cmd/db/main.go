@@ -16,6 +16,13 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func encodeJSON(v any) error {
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+	return enc.Encode(v)
+}
+
 func Seed(db *sql.DB, n int) error {
 	type sample struct{ s, lang string }
 	samples := []sample{
@@ -82,10 +89,7 @@ func Dump(db *sql.DB, n int) error {
 		}
 		out = append(out, r)
 	}
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetEscapeHTML(false)
-	enc.SetIndent("", "  ")
-	return enc.Encode(out)
+	return encodeJSON(out)
 }
 
 func Reset(db *sql.DB) error {
@@ -97,7 +101,9 @@ func Reset(db *sql.DB) error {
     `); err != nil {
 		return err
 	}
-	pkg.MigrateUp(db, "migrations")
+	if err := pkg.MigrateUp(db); err != nil {
+		return err
+	}
 	pkg.BootstrapDB(db)
 	return nil
 }
@@ -119,10 +125,7 @@ func main() {
 
 	switch cmd {
 	case "settings":
-		s := pkg.GetUISettings(db)
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetEscapeHTML(false)
-		if err := enc.Encode(s); err != nil {
+		if err := encodeJSON(pkg.GetUISettings(db)); err != nil {
 			panic(err)
 		}
 	case "reset":
@@ -146,15 +149,13 @@ func main() {
 			panic(err)
 		}
 	case "search":
-		q := strings.Join(args, " ")
-		res := pkg.FindSnippets(db, q, 0, 50)
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetEscapeHTML(false)
-		if err := enc.Encode(res); err != nil {
+		if err := encodeJSON(pkg.FindSnippets(db, strings.Join(args, " "), 0, 50)); err != nil {
 			panic(err)
 		}
 	case "migrate":
-		pkg.MigrateUp(db, "migrations")
+		if err := pkg.MigrateUp(db); err != nil {
+			panic(err)
+		}
 	case "delete":
 		db.Close()
 		dataDir := getDataDir(*prod)
