@@ -55,18 +55,20 @@ func (s *Service) ServiceStartup(ctx context.Context, _ application.ServiceOptio
 		DisableResize: true,
 		Hidden:        true,
 		Mac: application.MacWindow{
-			Appearance:    application.DefaultAppearance,
-			DisableShadow: true,
-			Backdrop:      application.MacBackdropTranslucent,
-			Panel:         true,
+			Appearance:         application.DefaultAppearance,
+			DisableShadow:      true,
+			Backdrop:           application.MacBackdropTranslucent,
+			NonactivatingPanel: true,
+			WindowLevel:        application.MacWindowLevelFloating,
 		},
 		URL: "/",
 	})
 	s.window = w
 
 	app.Event.OnApplicationEvent(events.Mac.ApplicationDidBecomeActive, func(_ *application.ApplicationEvent) {
-		pkg.HideApp()
-		s.window.Show()
+		<-s.readyCh
+		windowPtr := s.window.NativeWindow()
+		pkg.ShowPanel(windowPtr, true)
 	})
 
 	go func() {
@@ -88,37 +90,16 @@ func (s *Service) AppendLog(msg string) {
 
 func (s *Service) show() {
 	<-s.readyCh
-	mx, my := pkg.Location()
-	n := pkg.DisplaysNum()
-	did := 0
-	for i := range n {
-		x, y, w, h := pkg.GetDisplayBounds(i)
-		if mx >= x && mx < x+w && my >= y && my < y+h {
-			did = i
-			break
-		}
-	}
-	r := pkg.GetScreenRect(did)
-	h := r.H
-
-	margin := 60
-	h -= margin * 2
-
-	w, _ := s.window.Size()
-	centerX := r.X + (r.W-w)/2
-	centerY := r.Y + (r.H-h)/2
-
-	go func() {
-		s.window.SetSize(w, h)
-		s.window.SetPosition(-10000, -10000)
-		s.window.SetPosition(centerX, centerY)
-
-		s.window.Show().Focus()
-	}()
+	windowPtr := s.window.NativeWindow()
+	pkg.ShowPanel(windowPtr, false)
 }
 
 func (s *Service) FrontendReady() {
-	s.readyOnce.Do(func() { close(s.readyCh) })
+	s.readyOnce.Do(func() {
+		close(s.readyCh)
+		windowPtr := s.window.NativeWindow()
+		pkg.HidePanelOnResignKey(windowPtr)
+	})
 }
 
 func (s *Service) FindSnippets(q string, before int64, limit int) []pkg.Snippet {
@@ -157,10 +138,6 @@ func (s *Service) ListStyles() []string {
 
 func (s *Service) AddSnippet(content string, language string) int64 {
 	return pkg.AddSnippet(s.db, content, language, time.Now().Unix())
-}
-
-func (s *Service) Paste() {
-	pkg.Paste()
 }
 
 func (s *Service) GetSnippetDetail(id int64) pkg.Snippet {
