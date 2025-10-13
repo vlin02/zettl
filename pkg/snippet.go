@@ -93,13 +93,13 @@ func PurgeExpiredSnippets(db *sql.DB) {
 	if len(ids) == 0 {
 		return
 	}
-	ph := make([]string, len(ids))
+	placeholders := make([]string, len(ids))
 	args := make([]any, len(ids))
 	for i, id := range ids {
-		ph[i] = "?"
+		placeholders[i] = "?"
 		args[i] = id
 	}
-	_, err = db.Exec("DELETE FROM snippets WHERE id IN ("+strings.Join(ph, ",")+")", args...)
+	_, err = db.Exec("DELETE FROM snippets WHERE id IN ("+strings.Join(placeholders, ",")+")", args...)
 	if err != nil {
 		panic(err)
 	}
