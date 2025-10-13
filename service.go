@@ -92,6 +92,7 @@ func (s *Service) FrontendReady() {
 		close(s.readyCh)
 		windowPtr := s.window.NativeWindow()
 		pkg.SetupPanelNotifications(windowPtr)
+		s.show()
 	})
 }
 
@@ -116,7 +117,7 @@ func (s *Service) SetRetentionDays(days int) {
 	pkg.SetRetentionDays(s.db, days)
 }
 
-func (s *Service) SetToggleHotkey(ev pkg.Shortcut) {
+func (s *Service) SetToggleHotkey(ev pkg.KeyboardEvent) {
 	pkg.SetToggleHotkey(s.db, ev)
 	s.registerHotkeys()
 }

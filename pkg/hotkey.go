@@ -1,8 +1,35 @@
 package pkg
 
 import (
+	"encoding/json"
+
 	hk "golang.design/x/hotkey"
 )
+
+type hotkeyJSON struct {
+	Mods []uint32 `json:"mods"`
+	Key  uint32   `json:"key"`
+}
+
+func marshalHotkey(mods []hk.Modifier, key hk.Key) string {
+	uintMods := make([]uint32, len(mods))
+	for i, m := range mods {
+		uintMods[i] = uint32(m)
+	}
+	h := hotkeyJSON{Mods: uintMods, Key: uint32(key)}
+	jsonBytes, _ := json.Marshal(h)
+	return string(jsonBytes)
+}
+
+func unmarshalHotkey(s string) ([]hk.Modifier, hk.Key) {
+	var h hotkeyJSON
+	json.Unmarshal([]byte(s), &h)
+	mods := make([]hk.Modifier, len(h.Mods))
+	for i, m := range h.Mods {
+		mods[i] = hk.Modifier(m)
+	}
+	return mods, hk.Key(h.Key)
+}
 
 var KeyToCode = map[hk.Key]string{
 	hk.KeySpace:  "Space",
@@ -154,13 +181,14 @@ var StringToModifier = map[string]hk.Modifier{
 	"Meta":    hk.ModCmd,
 }
 
-type Shortcut struct {
+// A Javascript keyboard event
+type KeyboardEvent struct {
 	Modifiers []string `json:"modifiers"`
 	Code      string   `json:"code"`
 }
 
-func HotkeyToEvent(mods []hk.Modifier, key hk.Key) *Shortcut {
-	e := &Shortcut{Modifiers: make([]string, 0, len(mods)), Code: KeyToCode[key]}
+func HotkeyToEvent(mods []hk.Modifier, key hk.Key) *KeyboardEvent {
+	e := &KeyboardEvent{Modifiers: make([]string, 0, len(mods)), Code: KeyToCode[key]}
 	for _, m := range mods {
 		if s, ok := ModifierToString[m]; ok {
 			e.Modifiers = append(e.Modifiers, s)
@@ -169,7 +197,7 @@ func HotkeyToEvent(mods []hk.Modifier, key hk.Key) *Shortcut {
 	return e
 }
 
-func EventToHotkey(e *Shortcut) ([]hk.Modifier, hk.Key) {
+func EventToHotkey(e *KeyboardEvent) ([]hk.Modifier, hk.Key) {
 	k, ok := CodeToKey[e.Code]
 	if !ok {
 		panic("invalid code")

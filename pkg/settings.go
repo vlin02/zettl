@@ -2,22 +2,13 @@ package pkg
 
 import (
 	"database/sql"
-	"encoding/json"
 
 	hotkey "golang.design/x/hotkey"
 )
 
 func BootstrapDB(db *sql.DB) {
-	obj := struct {
-		Mods []uint32 `json:"mods"`
-		Key  uint32   `json:"key"`
-	}{Mods: []uint32{uint32(hotkey.ModCmd), uint32(hotkey.ModShift)}, Key: uint32(hotkey.KeyA)}
-	b, err := json.Marshal(obj)
-	if err != nil {
-		panic(err)
-	}
-
-	if _, err := db.Exec("INSERT OR IGNORE INTO settings (retention_days, style, toggle_hotkey, font_size) VALUES (?, ?, ?, ?)", 30, "onedark", string(b), 14); err != nil {
+	hotkeyStr := marshalHotkey([]hotkey.Modifier{hotkey.ModCmd, hotkey.ModShift}, hotkey.KeyC)
+	if _, err := db.Exec("INSERT OR IGNORE INTO settings (retention_days, style, toggle_hotkey, font_size) VALUES (?, ?, ?, ?)", 30, "onedark", hotkeyStr, 14); err != nil {
 		panic(err)
 	}
 }
@@ -36,19 +27,8 @@ func GetSettings(db *sql.DB) Settings {
 	if err := row.Scan(&days, &style, &toggle); err != nil {
 		panic(err)
 	}
-	var obj struct {
-		Mods []uint32 `json:"mods"`
-		Key  uint32   `json:"key"`
-	}
-	if err := json.Unmarshal([]byte(toggle), &obj); err != nil {
-		panic(err)
-	}
-	mods := make([]hotkey.Modifier, 0, len(obj.Mods))
-	for _, m := range obj.Mods {
-		mods = append(mods, hotkey.Modifier(m))
-	}
-	thk := hotkey.New(mods, hotkey.Key(obj.Key))
-	return Settings{Style: style, CSS: ChromaCSSForStyle(style), RetentionDays: days, ToggleHotkey: thk}
+	mods, key := unmarshalHotkey(toggle)
+	return Settings{Style: style, CSS: ChromaCSSForStyle(style), RetentionDays: days, ToggleHotkey: hotkey.New(mods, key)}
 }
 
 func GetUISettings(db *sql.DB) UISettings {
@@ -58,25 +38,14 @@ func GetUISettings(db *sql.DB) UISettings {
 	if err := row.Scan(&days, &style, &toggle, &fontSize); err != nil {
 		panic(err)
 	}
-	var obj struct {
-		Mods []uint32 `json:"mods"`
-		Key  uint32   `json:"key"`
-	}
-	if err := json.Unmarshal([]byte(toggle), &obj); err != nil {
-		panic(err)
-	}
-
-	mods := make([]hotkey.Modifier, 0, len(obj.Mods))
-	for _, m := range obj.Mods {
-		mods = append(mods, hotkey.Modifier(m))
-	}
+	mods, key := unmarshalHotkey(toggle)
 
 	var out UISettings
 	out.Style.CSS = ChromaCSSForStyle(style)
 	out.Style.Name = style
-	hk := HotkeyToEvent(mods, hotkey.Key(obj.Key))
-	if hk != nil {
-		out.ToggleHotkey = *hk
+	event := HotkeyToEvent(mods, key)
+	if event != nil {
+		out.ToggleHotkey = *event
 	}
 	out.RetentionDays = days
 	out.FontSize = fontSize
@@ -89,10 +58,10 @@ type Style struct {
 }
 
 type UISettings struct {
-	Style         Style    `json:"style"`
-	ToggleHotkey  Shortcut `json:"toggle_hotkey"`
-	RetentionDays int      `json:"retention_days"`
-	FontSize      int      `json:"font_size"`
+	Style         Style         `json:"style"`
+	ToggleHotkey  KeyboardEvent `json:"toggle_hotkey"`
+	RetentionDays int           `json:"retention_days"`
+	FontSize      int           `json:"font_size"`
 }
 
 func SetSyntaxStyle(db *sql.DB, style string) {
@@ -113,21 +82,10 @@ func SetRetentionDays(db *sql.DB, days int) {
 	}
 }
 
-func SetToggleHotkey(db *sql.DB, event Shortcut) {
+func SetToggleHotkey(db *sql.DB, event KeyboardEvent) {
 	mods, key := EventToHotkey(&event)
-	uintMods := make([]uint32, len(mods))
-	for i, m := range mods {
-		uintMods[i] = uint32(m)
-	}
-	obj := struct {
-		Mods []uint32 `json:"mods"`
-		Key  uint32   `json:"key"`
-	}{Mods: uintMods, Key: uint32(key)}
-	b, err := json.Marshal(obj)
-	if err != nil {
-		panic(err)
-	}
-	if _, err := db.Exec("UPDATE settings SET toggle_hotkey = ?", string(b)); err != nil {
+	hotkeyStr := marshalHotkey(mods, key)
+	if _, err := db.Exec("UPDATE settings SET toggle_hotkey = ?", hotkeyStr); err != nil {
 		panic(err)
 	}
 }
