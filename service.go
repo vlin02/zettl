@@ -145,6 +145,10 @@ func (s *Service) GetSnippetDetail(id int64) pkg.Snippet {
 	return pkg.GetSnippetDetail(s.db, id)
 }
 
+func (s *Service) ClearHistory() {
+	pkg.ClearAllSnippets(s.db)
+}
+
 func (s *Service) registerHotkeys() {
 	if s.hk != nil {
 		s.hk.Unregister()

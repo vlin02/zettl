@@ -17,6 +17,10 @@ export function AppendLog(msg: string): $CancellablePromise<void> {
     return $Call.ByID(336368141, msg);
 }
 
+export function ClearHistory(): $CancellablePromise<void> {
+    return $Call.ByID(4082901906);
+}
+
 export function FindSnippets(q: string, before: number, limit: number): $CancellablePromise<pkg$0.Snippet[]> {
     return $Call.ByID(1291141136, q, before, limit).then(($result: any) => {
         return $$createType1($result);

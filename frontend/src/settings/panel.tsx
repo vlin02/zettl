@@ -7,6 +7,7 @@ import {
   SetRetentionDays,
   SetToggleHotkey,
   SetFontSize,
+  ClearHistory,
 } from '../../bindings/zettl/service'
 import {
   Select,
@@ -23,10 +24,12 @@ export function SettingsPanel({
   onClose,
   settings,
   onRefetch,
+  onSearchInvalidate,
 }: {
   onClose: () => void
   settings: UISettings
   onRefetch: () => void
+  onSearchInvalidate?: () => void
 }) {
   const [styles, setStyles] = useState<string[]>([])
   useEffect(() => {
@@ -119,6 +122,22 @@ export function SettingsPanel({
                   onRefetch()
                 }}
               />
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium w-40">Clear All History</span>
+            <div className="w-56 flex justify-end">
+              <Button
+                className="h-8 text-destructive hover:text-destructive"
+                variant="ghost"
+                onClick={async () => {
+                  await ClearHistory()
+                  onSearchInvalidate?.()
+                  onRefetch()
+                }}
+              >
+                Clear
+              </Button>
             </div>
           </div>
         </div>

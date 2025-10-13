@@ -211,3 +211,10 @@ func GetSnippetDetail(db *sql.DB, id int64) Snippet {
 	}
 	return r
 }
+
+func ClearAllSnippets(db *sql.DB) {
+	_, err := db.Exec("DELETE FROM snippets")
+	if err != nil {
+		panic(err)
+	}
+}

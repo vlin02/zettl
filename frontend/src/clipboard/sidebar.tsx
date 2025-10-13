@@ -149,6 +149,7 @@ export function Sidebar() {
               onClose={() => setShowSettings(false)}
               settings={settings}
               onRefetch={loadSettings}
+              onSearchInvalidate={() => loadPage('')}
             />
           </div>
         ) : (
