@@ -5,12 +5,12 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
-export class Shortcut {
+export class KeyboardEvent {
     "modifiers": string[];
     "code": string;
 
-    /** Creates a new Shortcut instance. */
-    constructor($$source: Partial<Shortcut> = {}) {
+    /** Creates a new KeyboardEvent instance. */
+    constructor($$source: Partial<KeyboardEvent> = {}) {
         if (!("modifiers" in $$source)) {
             this["modifiers"] = [];
         }
@@ -22,15 +22,15 @@ export class Shortcut {
     }
 
     /**
-     * Creates a new Shortcut instance from a string or object.
+     * Creates a new KeyboardEvent instance from a string or object.
      */
-    static createFrom($$source: any = {}): Shortcut {
+    static createFrom($$source: any = {}): KeyboardEvent {
         const $$createField0_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("modifiers" in $$parsedSource) {
             $$parsedSource["modifiers"] = $$createField0_0($$parsedSource["modifiers"]);
         }
-        return new Shortcut($$parsedSource as Partial<Shortcut>);
+        return new KeyboardEvent($$parsedSource as Partial<KeyboardEvent>);
     }
 }
 
@@ -98,7 +98,7 @@ export class Style {
 
 export class UISettings {
     "style": Style;
-    "toggle_hotkey": Shortcut;
+    "toggle_hotkey": KeyboardEvent;
     "retention_days": number;
     "font_size": number;
 
@@ -108,7 +108,7 @@ export class UISettings {
             this["style"] = (new Style());
         }
         if (!("toggle_hotkey" in $$source)) {
-            this["toggle_hotkey"] = (new Shortcut());
+            this["toggle_hotkey"] = (new KeyboardEvent());
         }
         if (!("retention_days" in $$source)) {
             this["retention_days"] = 0;
@@ -140,4 +140,4 @@ export class UISettings {
 // Private type creation functions
 const $$createType0 = $Create.Array($Create.Any);
 const $$createType1 = Style.createFrom;
-const $$createType2 = Shortcut.createFrom;
+const $$createType2 = KeyboardEvent.createFrom;

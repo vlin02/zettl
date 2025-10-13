@@ -61,7 +61,7 @@ export function SetSyntaxStyle(style: string): $CancellablePromise<void> {
     return $Call.ByID(1494376189, style);
 }
 
-export function SetToggleHotkey(ev: pkg$0.Shortcut): $CancellablePromise<void> {
+export function SetToggleHotkey(ev: pkg$0.KeyboardEvent): $CancellablePromise<void> {
     return $Call.ByID(869068813, ev);
 }
 
