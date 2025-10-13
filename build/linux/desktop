@@ -3,11 +3,11 @@ Version=1.0
 Name=Zettl
 Comment=MacOS clipboard app for developers
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/zettl %u
+Exec=/usr/local/bin/Zettl %u
 Terminal=false
 Type=Application
-Icon=zettl
+Icon=Zettl
 Categories=Utility;
-StartupWMClass=zettl
+StartupWMClass=Zettl
 
  

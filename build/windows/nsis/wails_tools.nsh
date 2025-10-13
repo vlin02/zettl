@@ -5,7 +5,7 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "zettl"
+    !define INFO_PROJECTNAME "Zettl"
 !endif
 !ifndef INFO_COMPANYNAME
     !define INFO_COMPANYNAME "Zettl"
@@ -14,7 +14,7 @@
     !define INFO_PRODUCTNAME "Zettl"
 !endif
 !ifndef INFO_PRODUCTVERSION
-    !define INFO_PRODUCTVERSION "1.0.3"
+    !define INFO_PRODUCTVERSION "1.0.4"
 !endif
 !ifndef INFO_COPYRIGHT
     !define INFO_COPYRIGHT "© 2025, Zettl"
