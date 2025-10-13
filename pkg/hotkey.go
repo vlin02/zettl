@@ -161,9 +161,48 @@ var StringToModifier = map[string]hk.Modifier{
 	"Meta":    hk.ModCmd,
 }
 
-func HotkeyToEvent(mods []hk.Modifier, key hk.Key) *KeyboardEvent {
-	e := &KeyboardEvent{Modifiers: make([]string, 0, len(mods)), Code: KeyToCode[key]}
-	for _, m := range mods {
+type Hotkey struct {
+	Mods []hk.Modifier
+	Key  hk.Key
+}
+
+func NewHotkey(mods []hk.Modifier, key hk.Key) Hotkey {
+	return Hotkey{Mods: mods, Key: key}
+}
+
+func (h Hotkey) Marshal() string {
+	uintMods := make([]uint32, len(h.Mods))
+	for i, m := range h.Mods {
+		uintMods[i] = uint32(m)
+	}
+	data := struct {
+		Mods []uint32 `json:"mods"`
+		Key  uint32   `json:"key"`
+	}{Mods: uintMods, Key: uint32(h.Key)}
+	jsonBytes, _ := json.Marshal(data)
+	return string(jsonBytes)
+}
+
+func UnmarshalHotkey(s string) Hotkey {
+	var data struct {
+		Mods []uint32 `json:"mods"`
+		Key  uint32   `json:"key"`
+	}
+	json.Unmarshal([]byte(s), &data)
+	mods := make([]hk.Modifier, len(data.Mods))
+	for i, m := range data.Mods {
+		mods[i] = hk.Modifier(m)
+	}
+	return Hotkey{Mods: mods, Key: hk.Key(data.Key)}
+}
+
+func (h Hotkey) ToOpaque() *hk.Hotkey {
+	return hk.New(h.Mods, h.Key)
+}
+
+func (h Hotkey) ToEvent() *KeyboardEvent {
+	e := &KeyboardEvent{Modifiers: make([]string, 0, len(h.Mods)), Code: KeyToCode[h.Key]}
+	for _, m := range h.Mods {
 		if s, ok := ModifierToString[m]; ok {
 			e.Modifiers = append(e.Modifiers, s)
 		}
@@ -171,7 +210,7 @@ func HotkeyToEvent(mods []hk.Modifier, key hk.Key) *KeyboardEvent {
 	return e
 }
 
-func EventToHotkey(e *KeyboardEvent) ([]hk.Modifier, hk.Key) {
+func (e *KeyboardEvent) ToHotkey() Hotkey {
 	k, ok := CodeToKey[e.Code]
 	if !ok {
 		panic("invalid code")
@@ -184,30 +223,5 @@ func EventToHotkey(e *KeyboardEvent) ([]hk.Modifier, hk.Key) {
 		}
 		mods = append(mods, m)
 	}
-	return mods, k
-}
-
-type hotkeyJSON struct {
-	Mods []uint32 `json:"mods"`
-	Key  uint32   `json:"key"`
-}
-
-func marshalHotkey(mods []hk.Modifier, key hk.Key) string {
-	uintMods := make([]uint32, len(mods))
-	for i, m := range mods {
-		uintMods[i] = uint32(m)
-	}
-	h := hotkeyJSON{Mods: uintMods, Key: uint32(key)}
-	jsonBytes, _ := json.Marshal(h)
-	return string(jsonBytes)
-}
-
-func unmarshalHotkey(s string) ([]hk.Modifier, hk.Key) {
-	var h hotkeyJSON
-	json.Unmarshal([]byte(s), &h)
-	mods := make([]hk.Modifier, len(h.Mods))
-	for i, m := range h.Mods {
-		mods[i] = hk.Modifier(m)
-	}
-	return mods, hk.Key(h.Key)
+	return Hotkey{Mods: mods, Key: k}
 }

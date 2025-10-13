@@ -150,10 +150,7 @@ func (s *Service) registerHotkeys() {
 		close(s.hkStop)
 	}
 	settings := pkg.GetSettings(s.db)
-	hk := settings.ToggleHotkey
-	if hk == nil {
-		return
-	}
+	hk := settings.ToggleHotkey.ToOpaque()
 	if err := hk.Register(); err != nil {
 		panic(err)
 	}

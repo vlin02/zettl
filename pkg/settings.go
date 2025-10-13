@@ -3,12 +3,12 @@ package pkg
 import (
 	"database/sql"
 
-	hotkey "golang.design/x/hotkey"
+	hk "golang.design/x/hotkey"
 )
 
 func BootstrapDB(db *sql.DB) {
-	hotkeyStr := marshalHotkey([]hotkey.Modifier{hotkey.ModCmd, hotkey.ModShift}, hotkey.KeyC)
-	if _, err := db.Exec("INSERT OR IGNORE INTO settings (retention_days, style, toggle_hotkey, font_size) VALUES (?, ?, ?, ?)", 30, "onedark", hotkeyStr, 14); err != nil {
+	defaultHotkey := NewHotkey([]hk.Modifier{hk.ModCmd, hk.ModShift}, hk.KeyC)
+	if _, err := db.Exec("INSERT OR IGNORE INTO settings (retention_days, style, toggle_hotkey, font_size) VALUES (?, ?, ?, ?)", 30, "onedark", defaultHotkey.Marshal(), 14); err != nil {
 		panic(err)
 	}
 }
@@ -17,7 +17,7 @@ type Settings struct {
 	Style         string
 	CSS           string
 	RetentionDays int
-	ToggleHotkey  *hotkey.Hotkey
+	ToggleHotkey  Hotkey
 }
 
 func GetSettings(db *sql.DB) Settings {
@@ -27,8 +27,8 @@ func GetSettings(db *sql.DB) Settings {
 	if err := row.Scan(&days, &style, &toggle); err != nil {
 		panic(err)
 	}
-	mods, key := unmarshalHotkey(toggle)
-	return Settings{Style: style, CSS: ChromaCSSForStyle(style), RetentionDays: days, ToggleHotkey: hotkey.New(mods, key)}
+	hotkey := UnmarshalHotkey(toggle)
+	return Settings{Style: style, CSS: ChromaCSSForStyle(style), RetentionDays: days, ToggleHotkey: hotkey}
 }
 
 func GetUISettings(db *sql.DB) UISettings {
@@ -38,12 +38,12 @@ func GetUISettings(db *sql.DB) UISettings {
 	if err := row.Scan(&days, &style, &toggle, &fontSize); err != nil {
 		panic(err)
 	}
-	mods, key := unmarshalHotkey(toggle)
+	hotkey := UnmarshalHotkey(toggle)
 
 	var out UISettings
 	out.Style.CSS = ChromaCSSForStyle(style)
 	out.Style.Name = style
-	event := HotkeyToEvent(mods, key)
+	event := hotkey.ToEvent()
 	if event != nil {
 		out.ToggleHotkey = *event
 	}
@@ -83,9 +83,8 @@ func SetRetentionDays(db *sql.DB, days int) {
 }
 
 func SetToggleHotkey(db *sql.DB, event KeyboardEvent) {
-	mods, key := EventToHotkey(&event)
-	hotkeyStr := marshalHotkey(mods, key)
-	if _, err := db.Exec("UPDATE settings SET toggle_hotkey = ?", hotkeyStr); err != nil {
+	hotkey := event.ToHotkey()
+	if _, err := db.Exec("UPDATE settings SET toggle_hotkey = ?", hotkey.Marshal()); err != nil {
 		panic(err)
 	}
 }
